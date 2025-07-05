@@ -339,7 +339,7 @@ def plot_nodal_responses(
     odb_tag: Union[int, str] = 1,
     slides: bool = False,
     step: Union[int, str] = "absMax",
-    scale: float = 1.0,
+    scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
@@ -367,6 +367,8 @@ def plot_nodal_responses(
         If int, this step will be demonstrated (counting from 0).
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
+        If set to False, the deformed shape will not be scaled.
+        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp
@@ -445,7 +447,7 @@ def plot_nodal_responses(
 def plot_nodal_responses_animation(
     odb_tag: Union[int, str] = 1,
     framerate: Optional[int] = None,
-    scale: float = 1.0,
+    scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
@@ -469,6 +471,8 @@ def plot_nodal_responses_animation(
         For example, if an earthquake analysis has 1000 steps and you want to complete the demonstration in ten seconds, you should set ``framerate = 1000/10 = 100``.
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
+        If set to False, the deformed shape will not be scaled.
+        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp

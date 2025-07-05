@@ -426,7 +426,7 @@ def plot_unstruct_responses(
     unit_symbol: Optional[str] = None,
     unit_factor: Optional[float] = None,
     show_defo: bool = True,
-    defo_scale: float = 1.0,
+    defo_scale: Union[float, int, bool] = 1.0,
     show_bc: bool = True,
     bc_scale: float = 1.0,
     show_mp_constraint: bool = False,
@@ -520,6 +520,8 @@ def plot_unstruct_responses(
         Whether to display the deformed shape.
     defo_scale: float, default: 1.0
         Scales the size of the deformation presentation when show_defo is True.
+        If set to False, the deformed shape will not be scaled.
+        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
     show_bc: bool, default: True
         Whether to display boundary supports.
     bc_scale: float, default: 1.0
@@ -612,7 +614,7 @@ def plot_unstruct_responses_animation(
     unit_symbol: Optional[str] = None,
     unit_factor: Optional[float] = None,
     show_defo: bool = True,
-    defo_scale: float = 1.0,
+    defo_scale: Union[float, int, bool] = 1.0,
     show_bc: bool = True,
     bc_scale: float = 1.0,
     show_mp_constraint: bool = False,
@@ -704,7 +706,9 @@ def plot_unstruct_responses_animation(
     show_defo: bool, default: True
         Whether to display the deformed shape.
     defo_scale: float, default: 1.0
-        Scales the size of the deformation presentation when show_defo is True.
+        Scales the size of the deformation presentation.
+        If set to False, the deformed shape will not be scaled.
+        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
     show_bc: bool, default: True
         Whether to display boundary supports.
     bc_scale: float, default: 1.0

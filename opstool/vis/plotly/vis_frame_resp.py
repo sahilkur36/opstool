@@ -104,7 +104,7 @@ class PlotFrameResponse(PlotResponseBase):
         if comp_type.upper() in ["N", "MZ", "VY", "T"]:
             self.component = comp_type.upper()
             self.plot_axis = "y"
-            self.plot_axis_sign = -1.0
+            self.plot_axis_sign = 1.0
         elif comp_type.upper() in ["VZ", "MY"]:
             self.component = comp_type.upper()
             self.plot_axis = "z"

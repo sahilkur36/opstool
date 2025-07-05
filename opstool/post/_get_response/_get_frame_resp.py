@@ -336,6 +336,12 @@ def _get_beam_sec_resp(beam_tags, ele_load_data, local_forces, basic_disp, n_sec
         else:
             xlocs, sec_f, sec_d = _get_nonlinear_section_response(eletag, length)
 
+        # adjust signs
+        sec_f[:, 1] = -sec_f[:, 1]  # Mz
+        sec_f[:, 2] = -sec_f[:, 2]  # Vy
+        sec_d[:, 1] = -sec_d[:, 1]  # Mz
+        sec_d[:, 2] = -sec_d[:, 2]  # Vy
+
         beam_locs.append(np.array(xlocs))
         beam_secF.append(np.array(sec_f))
         beam_secD.append(np.array(sec_d))
@@ -367,6 +373,7 @@ def _get_nonlinear_section_response(eletag, length):
         defos = _format_six_component(ops.sectionDeformation(eletag, i + 1))
         sec_f.append(forces)
         sec_d.append(defos)
+    xlocs, sec_f, sec_d = np.array(xlocs), np.array(sec_f), np.array(sec_d)
     return xlocs, sec_f, sec_d
 
 

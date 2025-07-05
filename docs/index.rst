@@ -1,5 +1,8 @@
 .. This theme is based on the `sphinx-needs`.
 
+.. role:: blue
+
+
 .. grid::
    :gutter: 2 3 3 3
    :margin: 4 4 1 2
@@ -180,3 +183,8 @@ Contents
    src/api/post
    src/api/vis
    src/api/analysis
+
+                                                                                                        
+                                                                                                                  
+
+📝 :blue:`This document is adapted from` `sphinx-needs <https://github.com/useblocks/sphinx-needs/>`__ :blue:`with modifications. We sincerely thank the original author(s) for their contribution.`

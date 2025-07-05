@@ -5,15 +5,19 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import ast
 import os
 import sys
 from pathlib import Path
 
 this_dir = Path(__file__).resolve().parent.parent
-about = {}
-with open(this_dir / "opstool" / "__about__.py") as f:
-    exec(f.read(), about)
-__version__ = about["__version__"]
+
+about_path = this_dir / "opstool" / "__about__.py"
+with open(about_path) as f:
+    for line in f:
+        if line.startswith("__version__"):
+            __version__ = ast.literal_eval(line.split("=", 1)[1].strip())
+            break
 
 # include pkg root folder to sys.path
 os.environ["PYTHONPATH"] = ":".join((str(this_dir), os.environ.get("PYTHONPATH", "")))
@@ -39,6 +43,7 @@ extensions = [
     "jupyter_sphinx",
     # 'jupyter_sphinx.execute'
     "sphinx_copybutton",
+    "furo.sphinxext",
 ]
 
 # autodoc config

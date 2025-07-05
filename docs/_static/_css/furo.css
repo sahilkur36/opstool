@@ -323,3 +323,12 @@ summary.sd-summary-title {
 .sn-dropdown-default .sd-summary-title {
     border-width: 0 !important;
 }
+
+.blue {
+    color:#6488ea;
+}
+
+.blue-bold {
+    color: #6488ea;
+    font-weight: bold;
+}

@@ -4,17 +4,12 @@ import numpy as np
 import plotly.graph_objs as go
 
 from ...post import loadODB
-from .plot_resp_base import PlotResponseBase
-from .plot_utils import (
-    _get_line_cells,
-    _get_unstru_cells,
-    _plot_lines_cmap,
-    _plot_points_cmap,
-    _plot_unstru_cmap,
-)
+from .._plot_nodal_resp_base import PlotNodalResponseBase
+from .plot_resp_base import PlotResponsePlotlyBase
+from .plot_utils import _plot_lines_cmap, _plot_points_cmap, _plot_unstru_cmap
 
 
-class PlotNodalResponse(PlotResponseBase):
+class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
     def __init__(
         self,
         model_info_steps,
@@ -30,65 +25,7 @@ class PlotNodalResponse(PlotResponseBase):
         title = f"<b>{self.PKG_NAME} :: Nodal Responses 3D Viewer</b><br><br>"
         self.title = {"text": title, "font": {"size": self.pargs.title_font_size}}
 
-    def set_comp_resp_type(self, resp_type, component):
-        if resp_type.lower() in ["disp", "dispacement"]:
-            self.resp_type = "disp"
-        elif resp_type.lower() in ["vel", "velocity"]:
-            self.resp_type = "vel"
-        elif resp_type.lower() in ["accel", "acceleration"]:
-            self.resp_type = "accel"
-        elif resp_type.lower() in ["reaction", "reactionforce"]:
-            self.resp_type = "reaction"
-        elif resp_type.lower() in ["reactionincinertia", "reactionincinertiaforce"]:
-            self.resp_type = "reactionIncInertia"
-        elif resp_type.lower() in ["rayleighforces", "rayleigh"]:
-            self.resp_type = "rayleighForces"
-        elif resp_type.lower() in ["pressure"]:
-            self.resp_type = "pressure"
-        else:
-            raise ValueError(  # noqa: TRY003
-                f"Invalid response type: {resp_type}. "
-                "Valid options are: disp, vel, accel, reaction, reactionIncInertia, rayleighForces, pressure."
-            )
-        if isinstance(component, str):
-            self.component = component.upper()
-        else:
-            self.component = list(component)
-
-    def _get_resp_clim_peak(self, idx="absMax"):
-        resps = []
-        for i in range(self.num_steps):
-            da = self._get_resp_da(i, self.resp_type, self.component)
-            resps.append(da)
-        if self.ModelUpdate:
-            resps_norm = resps if resps[0].ndim == 1 else [np.linalg.norm(resp, axis=1) for resp in resps]
-        else:
-            resps_norm = resps if resps[0].ndim == 1 else np.linalg.norm(resps, axis=2)
-        if isinstance(idx, str):
-            if idx.lower() == "absmax":
-                resp = [np.max(np.abs(data)) for data in resps]
-                step = np.argmax(resp)
-            elif idx.lower() == "max":
-                resp = [np.max(data) for data in resps]
-                step = np.argmax(resp)
-            elif idx.lower() == "absmin":
-                resp = [np.min(np.abs(data)) for data in resps]
-                step = np.argmin(resp)
-            elif idx.lower() == "min":
-                resp = [np.min(data) for data in resps]
-                step = np.argmin(resp)
-            else:
-                raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
-        else:
-            step = int(idx)
-        max_resps = [np.max(resp) for resp in resps_norm]
-        min_resps = [np.min(resp) for resp in resps_norm]
-        cmin, cmax = np.min(min_resps), np.max(max_resps)
-        self.resps_norm = resps_norm
-        self.clim = (cmin, cmax)
-        return cmin, cmax, step
-
-    def _make_txt(self, step, add_title=False):
+    def _make_title(self, step, add_title=False):
         max_norm, min_norm = np.max(self.resps_norm[step]), np.min(self.resps_norm[step])
         title = "Nodal Responses"
         if self.resp_type == "disp":
@@ -138,8 +75,8 @@ class PlotNodalResponse(PlotResponseBase):
         show_hover: bool = True,
     ):
         step = round(value)
-        line_cells, _ = _get_line_cells(self._get_line_da(step))
-        _, unstru_cell_types, unstru_cells = _get_unstru_cells(self._get_unstru_da(step))
+        line_cells, _ = self._get_line_cells(self._get_line_da(step))
+        _, unstru_cell_types, unstru_cells = self._get_unstru_cells(self._get_unstru_da(step))
         node_defo_coords = np.array(self._get_defo_coord_da(step, alpha))
         node_resp = np.array(self._get_resp_da(step, self.resp_type, self.component))
         if self.resps_norm is not None:
@@ -268,7 +205,7 @@ class PlotNodalResponse(PlotResponseBase):
             show_origin=show_origin,
         )
         self.FIGURE.add_traces(plotter)
-        txt = self._make_txt(step)
+        txt = self._make_title(step)
         self.FIGURE.update_layout(
             coloraxis={
                 "colorscale": self.pargs.cmap,
@@ -367,8 +304,9 @@ def plot_nodal_responses(
         If int, this step will be demonstrated (counting from 0).
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
-        If set to False, the deformed shape will not be scaled.
-        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to False, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp
@@ -471,8 +409,9 @@ def plot_nodal_responses_animation(
         For example, if an earthquake analysis has 1000 steps and you want to complete the demonstration in ten seconds, you should set ``framerate = 1000/10 = 100``.
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
-        If set to False, the deformed shape will not be scaled.
-        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to False, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp

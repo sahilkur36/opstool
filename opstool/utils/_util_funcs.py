@@ -198,3 +198,23 @@ def suppress_ops_print():
         # Restore the original stdout and stderr
         sys.stdout = stdout
         sys.stderr = stderr
+
+
+def make_dependency_missing(name: str, dependency: str, extra=None):
+    def _raise():
+        msg = f"'{name}' requires the optional dependency '{dependency}'."
+        if extra:
+            msg += f" Install it via: pip install opstool[{extra}]"
+        raise ImportError(msg)
+
+    class Missing:
+        def __getattr__(self, attr):
+            _raise()
+
+        def __call__(self, *args, **kwargs):
+            _raise()
+
+        def __repr__(self):
+            _raise()
+
+    return Missing()

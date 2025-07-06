@@ -968,48 +968,6 @@ def _plot_all_mesh_cmap(
     return None
 
 
-def _get_line_cells(line_data):
-    if len(line_data) > 0:
-        line_cells = line_data.to_numpy().astype(int)
-        line_tags = line_data.coords["eleTags"]
-    else:
-        line_cells, line_tags = [], []
-    return line_cells, line_tags
-
-
-def _get_unstru_cells(unstru_data):
-    if len(unstru_data) > 0:
-        unstru_tags = unstru_data.coords["eleTags"]
-        unstru_cell_types = np.array(unstru_data[:, -1], dtype=int)
-        unstru_cells = unstru_data.to_numpy()
-        if not np.any(np.isnan(unstru_cells)):
-            unstru_cells_new = unstru_cells[:, :-1].astype(int)
-        else:
-            unstru_cells_new = []
-            for cell in unstru_cells:
-                num = int(cell[0])
-                data = [num] + [int(data) for data in cell[1 : 1 + num]]
-                unstru_cells_new.extend(data)
-    else:
-        unstru_tags, unstru_cell_types, unstru_cells_new = [], [], []
-    return unstru_tags, unstru_cell_types, unstru_cells_new
-
-
-def _dropnan_by_time(da, model_update=False):
-    dims = da.dims
-    time_dim = dims[0]
-    cleaned_dataarrays = []
-    for t in range(da.sizes[time_dim]):
-        da_2d = da.isel({time_dim: t})
-        if da_2d.size == 0 or any(dim == 0 for dim in da_2d.shape):
-            cleaned_dataarrays.append([])
-        else:
-            dim2 = dims[1]
-            da_2d_cleaned = da_2d.dropna(dim=dim2, how="any") if model_update else da_2d
-            cleaned_dataarrays.append(da_2d_cleaned)
-    return cleaned_dataarrays
-
-
 # def group_cells(cells):
 #     line_cells, line_cells_type = [], []
 #     unstru_cells, unstru_cells_type = [], []

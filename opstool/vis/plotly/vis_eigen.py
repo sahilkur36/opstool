@@ -6,21 +6,15 @@ from plotly.subplots import make_subplots
 
 from ...post import load_eigen_data, load_linear_buckling_data
 from ...utils import CONFIGS
-from .plot_resp_base import PlotResponseBase
-from .plot_utils import (
-    PLOT_ARGS,
-    _get_line_cells,
-    _get_unstru_cells,
-    _plot_lines_cmap,
-    _plot_unstru_cmap,
-)
+from .plot_resp_base import PlotResponsePlotlyBase
+from .plot_utils import PLOT_ARGS, _plot_lines_cmap, _plot_unstru_cmap
 from .vis_model import PlotModelBase
 
 PKG_NAME = CONFIGS.get_pkg_name()
 SHAPE_MAP = CONFIGS.get_shape_map()
 
 
-class PlotEigenBase(PlotResponseBase):
+class PlotEigenBase(PlotResponsePlotlyBase):
     def __init__(self, model_info, modal_props, eigen_vectors):
         self.nodal_data = model_info["NodalData"]
         self.nodal_tags = self.nodal_data.coords["nodeTags"]
@@ -32,10 +26,10 @@ class PlotEigenBase(PlotResponseBase):
         self.show_zaxis = not np.max(self.ndims) <= 2
         # -------------------------------------------------------------
         self.line_data = model_info["AllLineElesData"]
-        self.line_cells, self.line_tags = _get_line_cells(self.line_data)
+        self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
         self.unstru_data = model_info["UnstructuralData"]
-        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = _get_unstru_cells(self.unstru_data)
+        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
         # --------------------------------------------------
         self.ModelInfo = model_info
         self.ModalProps = modal_props

@@ -5,81 +5,14 @@ import numpy as np
 import pyvista as pv
 
 from ...post import loadODB
-from .plot_resp_base import PlotResponseBase
-from .plot_utils import (
-    PLOT_ARGS,
-    _get_line_cells,
-    _get_unstru_cells,
-    _plot_all_mesh_cmap,
-)
+from .._plot_nodal_resp_base import PlotNodalResponseBase
+from .plot_resp_base import PlotResponsePyvistaBase
+from .plot_utils import PLOT_ARGS, _plot_all_mesh_cmap
 
 
-class PlotNodalResponse(PlotResponseBase):
-    def __init__(
-        self,
-        model_info_steps,
-        node_resp_steps,
-        model_update,
-    ):
+class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
+    def __init__(self, model_info_steps, node_resp_steps, model_update):
         super().__init__(model_info_steps, node_resp_steps, model_update)
-        self.resps_norm = None
-
-    def set_comp_resp_type(self, resp_type, component):
-        if resp_type.lower() in ["disp", "dispacement"]:
-            self.resp_type = "disp"
-        elif resp_type.lower() in ["vel", "velocity"]:
-            self.resp_type = "vel"
-        elif resp_type.lower() in ["accel", "acceleration"]:
-            self.resp_type = "accel"
-        elif resp_type.lower() in ["reaction", "reactionforce"]:
-            self.resp_type = "reaction"
-        elif resp_type.lower() in ["reactionincinertia", "reactionincinertiaforce"]:
-            self.resp_type = "reactionIncInertia"
-        elif resp_type.lower() in ["rayleighforces", "rayleigh"]:
-            self.resp_type = "rayleighForces"
-        elif resp_type.lower() in ["pressure"]:
-            self.resp_type = "pressure"
-        else:
-            raise ValueError(  # noqa: TRY003
-                f"Invalid response type: {resp_type}. "
-                "Valid options are: disp, vel, accel, reaction, reactionIncInertia, rayleighForces, pressure."
-            )
-        if isinstance(component, str):
-            self.component = component.upper()
-        else:
-            self.component = list(component)
-
-    def _get_resp_clim_peak(self, idx="absMax"):
-        resps = []
-        for i in range(self.num_steps):
-            da = self._get_resp_da(i, self.resp_type, self.component)
-            resps.append(da)
-        if self.ModelUpdate:
-            resps_norm = resps if resps[0].ndim == 1 else [np.linalg.norm(resp, axis=1) for resp in resps]
-        else:
-            resps_norm = resps if resps[0].ndim == 1 else np.linalg.norm(resps, axis=2)
-        if isinstance(idx, str):
-            if idx.lower() == "absmax":
-                resp = [np.max(np.abs(data)) for data in resps]
-                step = np.argmax(resp)
-            elif idx.lower() == "max":
-                resp = [np.max(data) for data in resps]
-                step = np.argmax(resp)
-            elif idx.lower() == "absmin":
-                resp = [np.min(np.abs(data)) for data in resps]
-                step = np.argmin(resp)
-            elif idx.lower() == "min":
-                resp = [np.min(data) for data in resps]
-                step = np.argmin(resp)
-            else:
-                raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
-        else:
-            step = int(idx)
-        max_resps = [np.max(resp) for resp in resps_norm]
-        min_resps = [np.min(resp) for resp in resps_norm]
-        cmin, cmax = np.min(min_resps), np.max(max_resps)
-        self.resps_norm = resps_norm
-        return cmin, cmax, step
 
     def _make_title(self, step, time):
         max_norm, min_norm = np.max(self.resps_norm[step]), np.min(self.resps_norm[step])
@@ -145,8 +78,8 @@ class PlotNodalResponse(PlotResponseBase):
         cpos="iso",
     ):
         step = round(value)
-        line_cells, _ = _get_line_cells(self._get_line_da(step))
-        _, unstru_cell_types, unstru_cells = _get_unstru_cells(self._get_unstru_da(step))
+        line_cells, _ = self._get_line_cells(self._get_line_da(step))
+        _, unstru_cell_types, unstru_cells = self._get_unstru_cells(self._get_unstru_da(step))
         t_ = self.time[step]
         node_no_deform_coords = np.array(self._get_node_da(step))
         node_defo_coords, scalars = self._get_mesh_data(step, alpha)
@@ -418,8 +351,9 @@ def plot_nodal_responses(
         If int, this step will be demonstrated (counting from 0).
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
-        If set to False, the deformed shape will not be scaled.
-        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to False, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp
@@ -549,8 +483,9 @@ def plot_nodal_responses_animation(
         If True, the plotting window will not be displayed.
     scale: float, default: 1.0
         Scales the size of the deformation presentation.
-        If set to False, the deformed shape will not be scaled.
-        If set to a float, it will scale the deformed shape by that factor based on the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to False, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
     show_defo: bool, default: True
         Whether to display the deformed shape.
     resp_type: str, default: disp

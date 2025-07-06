@@ -6,20 +6,15 @@ import pyvista as pv
 
 from ...post import load_eigen_data, load_linear_buckling_data
 from ...utils import CONFIGS
-from .plot_resp_base import slider_widget_args
-from .plot_utils import (
-    PLOT_ARGS,
-    _get_line_cells,
-    _get_unstru_cells,
-    _plot_all_mesh_cmap,
-)
+from .plot_resp_base import PlotResponsePyvistaBase, slider_widget_args
+from .plot_utils import PLOT_ARGS, _plot_all_mesh_cmap
 from .vis_model import PlotModelBase
 
 PKG_NAME = CONFIGS.get_pkg_name()
 SHAPE_MAP = CONFIGS.get_shape_map()
 
 
-class PlotEigenBase:
+class PlotEigenBase(PlotResponsePyvistaBase):
     def __init__(self, model_info, modal_props, eigen_vectors):
         self.nodal_data = model_info["NodalData"]
         self.nodal_tags = self.nodal_data.coords["nodeTags"]
@@ -29,19 +24,19 @@ class PlotEigenBase:
         self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
         self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
         self.show_zaxis = not np.max(self.ndims) <= 2
-        self.slider_widget_args = slider_widget_args
         # -------------------------------------------------------------
         self.line_data = model_info["AllLineElesData"]
-        self.line_cells, self.line_tags = _get_line_cells(self.line_data)
+        self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
         self.unstru_data = model_info["UnstructuralData"]
-        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = _get_unstru_cells(self.unstru_data)
+        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
         # --------------------------------------------------
         self.pargs = PLOT_ARGS
         self.ModelInfo = model_info
         self.ModalProps = modal_props
         self.EigenVectors = eigen_vectors
         self.plot_model_base = PlotModelBase(model_info, {})
+        self.slider_widget_args = slider_widget_args
         pv.set_plot_theme(PLOT_ARGS.theme)
 
     def _get_eigen_points(self, step, alpha):

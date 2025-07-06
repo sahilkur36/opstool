@@ -8,12 +8,10 @@ from matplotlib.colors import to_hex
 
 from ...post import load_model_data
 from ...utils import CONFIGS, gram_schmidt
-from .plot_resp_base import PlotResponseBase, _make_lines_arrows, _plot_bc, _plot_mp_constraint
+from .plot_resp_base import PlotResponsePlotlyBase, _make_lines_arrows, _plot_bc, _plot_mp_constraint
 from .plot_utils import (
     PLOT_ARGS,
     _get_ele_color,
-    _get_line_cells,
-    _get_unstru_cells,
     _make_lines_plotly,
     _plot_lines,
     _plot_points,
@@ -23,7 +21,7 @@ from .plot_utils import (
 PKG_NAME = CONFIGS.get_pkg_name()
 
 
-class PlotModelBase(PlotResponseBase):
+class PlotModelBase(PlotResponsePlotlyBase):
     def __init__(self, model_info: dict, cells: dict):
         # --------------------------------------------------------------
         self.nodal_data = model_info["NodalData"]
@@ -59,10 +57,10 @@ class PlotModelBase(PlotResponseBase):
         self.shell_data = model_info["ShellData"]
         # -------------------------------------------------------------
         self.line_data = model_info["AllLineElesData"]
-        self.line_cells, self.line_tags = _get_line_cells(self.line_data)
+        self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
         self.unstru_data = model_info["UnstructuralData"]
-        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = _get_unstru_cells(self.unstru_data)
+        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
         # -------------------------------------------------------------
         self.pargs = PLOT_ARGS
         self.FIGURE = go.Figure()

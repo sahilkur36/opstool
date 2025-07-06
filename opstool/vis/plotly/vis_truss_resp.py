@@ -5,99 +5,17 @@ import plotly.graph_objs as go
 
 from ...post import loadODB
 from ...utils import gram_schmidt
-from .plot_resp_base import PlotResponseBase
+from .._plot_truss_resp_base import PlotTrussResponseBase
+from .plot_resp_base import PlotResponsePlotlyBase
 from .plot_utils import _plot_lines, _plot_points_cmap, _plot_unstru_cmap
 
 
-class PlotTrussResponse(PlotResponseBase):
+class PlotTrussResponse(PlotTrussResponseBase, PlotResponsePlotlyBase):
     def __init__(self, model_info_steps, truss_resp_step, model_update):
         super().__init__(model_info_steps, truss_resp_step, model_update)
 
         title = f"{self.PKG_NAME} :: Truss Responses 3D Viewer</b><br><br>"
         self.title = {"text": title, "font": {"size": self.pargs.title_font_size}}
-
-    def _get_truss_data(self, step):
-        return self._get_model_da("TrussData", step)
-
-    def _set_resp_type(self, resp_type: str):
-        if resp_type.lower() in ["axialforce", "force", "forces"]:
-            resp_type = "axialForce"
-        elif resp_type.lower() in ["axialdefo", "axialdeformation", "deformation", "deformations"]:
-            resp_type = "axialDefo"
-        elif resp_type.lower() in ["stress", "stresses", "axialstress", "axialstresses"]:
-            resp_type = "Stress"
-        elif resp_type.lower() in ["strain", "strains", "axialstrain", "axialstrains"]:
-            resp_type = "Strain"
-        else:
-            raise ValueError(  # noqa: TRY003
-                f"Not supported response type {resp_type}! Valid options are: axialForce, axialDefo, Stress, Strain."
-            )
-        self.resp_type = resp_type
-
-    def _make_truss_info(self, ele_tags, step):
-        pos = self._get_node_da(step).to_numpy()
-        truss_data = self._get_truss_data(step)
-        if ele_tags is None:
-            truss_tags = truss_data.coords["eleTags"].values
-            truss_cells = truss_data.to_numpy().astype(int)
-        else:
-            truss_tags = np.atleast_1d(ele_tags)
-            truss_cells = truss_data.sel(eleTags=truss_tags).to_numpy().astype(int)
-        truss_node_coords = []
-        truss_cells_new = []
-        for i, cell in enumerate(truss_cells):
-            nodei, nodej = cell[1:]
-            truss_node_coords.append(pos[nodei])
-            truss_node_coords.append(pos[nodej])
-            truss_cells_new.append([2, 2 * i, 2 * i + 1])
-        truss_node_coords = np.array(truss_node_coords)
-        return truss_tags, truss_node_coords, truss_cells_new
-
-    def refactor_resp_step(self, resp_type: str, ele_tags):
-        self._set_resp_type(resp_type)
-        resps = []
-        if self.ModelUpdate or ele_tags is not None:
-            for i in range(self.num_steps):
-                truss_tags, _, _ = self._make_truss_info(ele_tags, i)
-                da = self._get_resp_da(i, self.resp_type)
-                da = da.sel(eleTags=truss_tags)
-                resps.append(da)
-        else:
-            for i in range(self.num_steps):
-                da = self._get_resp_da(i, self.resp_type)
-                resps.append(da)
-        self.resp_step = resps  # update
-
-    def _get_resp_peak(self, idx="absMax"):
-        if isinstance(idx, str):
-            if idx.lower() == "absmax":
-                resp = [np.max(np.abs(data)) for data in self.resp_step]
-                step = np.argmax(resp)
-            elif idx.lower() == "max":
-                resp = [np.max(data) for data in self.resp_step]
-                step = np.argmax(resp)
-            elif idx.lower() == "absmin":
-                resp = [np.min(np.abs(data)) for data in self.resp_step]
-                step = np.argmin(resp)
-            elif idx.lower() == "min":
-                resp = [np.min(data) for data in self.resp_step]
-                step = np.argmin(resp)
-            else:
-                raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
-        else:
-            step = int(idx)
-        resp = self.resp_step[step]
-        maxv = np.amax(np.abs(resp))
-        alpha_ = 0.0 if maxv == 0 else self.max_bound_size * self.pargs.scale_factor / maxv
-        cmin, cmax = self._get_truss_resp_clim()
-        self.clim = (cmin, cmax)
-        return step, (cmin, cmax), float(alpha_)
-
-    def _get_truss_resp_clim(self):
-        maxv = [np.max(data) for data in self.resp_step]
-        minv = [np.min(data) for data in self.resp_step]
-        cmin, cmax = np.min(minv), np.max(maxv)
-        return cmin, cmax
 
     def _get_mesh_data(self, step, ele_tags, alpha):
         truss_tags, truss_coords, truss_cells = self._make_truss_info(ele_tags, step)
@@ -223,7 +141,7 @@ class PlotTrussResponse(PlotResponseBase):
         if show_mp_constraint:
             self._plot_mp_constraint(plotter, step=step, defo_scale=0.0)
 
-    def _make_txt(self, step, add_title=False):
+    def _make_title(self, step, add_title=False):
         resp = self.resp_step[step].to_numpy()
         maxv = np.max(resp)
         minv = np.min(resp)
@@ -326,7 +244,7 @@ class PlotTrussResponse(PlotResponseBase):
             color=color,
         )
         self.FIGURE.add_traces(plotter)
-        txt = self._make_txt(max_step)
+        txt = self._make_title(max_step)
         showscale = color is None
         self.FIGURE.update_layout(
             coloraxis={

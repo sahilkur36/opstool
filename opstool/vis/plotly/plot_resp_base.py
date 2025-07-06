@@ -4,11 +4,9 @@ import numpy as np
 import plotly.graph_objs as go
 import xarray as xr
 
-from ...utils import CONFIGS
+from .._plot_resp_base import PlotResponseBase
 from .plot_utils import (
     PLOT_ARGS,
-    _get_line_cells,
-    _get_unstru_cells,
     _make_lines_plotly,
     _plot_all_mesh,
     _plot_lines,
@@ -16,7 +14,7 @@ from .plot_utils import (
 )
 
 
-class PlotResponseBase:
+class PlotResponsePlotlyBase(PlotResponseBase):
     def __init__(
         self,
         model_info_steps: dict[str, xr.DataArray],
@@ -24,36 +22,12 @@ class PlotResponseBase:
         model_update: bool,
         nodal_resp_steps: Optional[xr.Dataset] = None,
     ):
-        self.ModelInfoSteps = model_info_steps
-        self.RespSteps = resp_step
-        self.ModelUpdate = model_update
-        self.nodal_resp_steps = nodal_resp_steps
-        self.time = self.RespSteps.coords["time"].values
-        self.num_steps = len(self.time)
-
-        self.points_origin = self._get_node_da(0).to_numpy()
-        self.bounds = self._get_node_da(0).attrs["bounds"]
-        self.max_bound_size = self._get_node_da(0).attrs["maxBoundSize"]
-        self.min_bound_size = self._get_node_da(0).attrs["minBoundSize"]
-        model_dims = self._get_node_da(0).attrs["ndims"]
-        # # show z-axis in 3d view
-        self.show_zaxis = not np.max(model_dims) <= 2
-        # ------------------------------------------------------------
-        self.pargs = PLOT_ARGS
-        self.resp_step = None  # response data
-        self.resp_type = None
-        self.component = None  # component to be visualized
-        self.unit_symbol = ""  # unit symbol
-        self.unit_factor = 1.0
-        self.clim = (0, 1)  # color limits
-
-        self.defo_scale_factor = None
-        self.defo_coords = None  # deformed coordinates
+        super().__init__(model_info_steps, resp_step, model_update, nodal_resp_steps)
 
         # ----------------------------------------
+        self.pargs = PLOT_ARGS
         self.FIGURE = go.Figure()
         self.title = ""
-        self.PKG_NAME = CONFIGS.get_pkg_name()
 
     @staticmethod
     def _set_txt_props(txt, color="blue", weight="bold"):
@@ -69,105 +43,6 @@ class PlotResponseBase:
     @staticmethod
     def _get_plotly_line_data(points, line_cells, scalars=None):
         return _make_lines_plotly(points, line_cells, scalars=scalars)
-
-    def set_unit(self, symbol: Optional[str] = None, factor: Optional[float] = None):
-        # unit
-        if symbol is not None:
-            self.unit_symbol = symbol
-        if factor is not None:
-            self.unit_factor = factor
-
-    def _get_model_da(self, key, idx):
-        dims = self.ModelInfoSteps[key].dims
-        if self.ModelUpdate:
-            da = self.ModelInfoSteps[key].isel(time=idx)
-            da = da.dropna(dim=dims[1], how="any")
-        else:
-            da = self.ModelInfoSteps[key].isel(time=0)
-        # tags = da.coords[dims[1]].values
-        return da.copy()
-
-    def _get_node_da(self, idx):
-        return self._get_model_da("NodalData", idx)
-
-    def _get_line_da(self, idx):
-        return self._get_model_da("AllLineElesData", idx)
-
-    def _get_unstru_da(self, idx):
-        return self._get_model_da("UnstructuralData", idx)
-
-    def _get_bc_da(self, idx):
-        return self._get_model_da("FixedNodalData", idx)
-
-    def _get_mp_constraint_da(self, idx):
-        return self._get_model_da("MPConstraintData", idx)
-
-    def _get_resp_da(self, time_idx, resp_type, component=None):
-        dims = self.RespSteps[resp_type].dims
-        da = self.RespSteps[resp_type].isel(time=time_idx).copy()
-        if self.ModelUpdate:
-            da = da.dropna(dim=dims[1], how="all")
-        if da.ndim == 1 or component is None:
-            return da * self.unit_factor
-        elif da.ndim == 2:
-            return da.loc[:, component] * self.unit_factor
-        elif da.ndim == 3:
-            return da.loc[:, :, component] * self.unit_factor
-        return None
-
-    def _get_disp_da(self, idx):
-        if self.nodal_resp_steps is None:
-            data = self._get_resp_da(idx, "disp", ["UX", "UY", "UZ"])
-        else:
-            data = self.nodal_resp_steps["disp"].isel(time=idx).copy()
-            if self.ModelUpdate:
-                data = data.dropna(dim="nodeTags", how="all")
-            data = data.sel(DOFs=["UX", "UY", "UZ"])
-        return data / self.unit_factor  # come back to original unit
-
-    def _set_defo_scale_factor(self, alpha=1.0):
-        if self.defo_scale_factor is not None:
-            return
-
-        defos, poss = [], []
-        for i in range(self.num_steps):
-            defo = self._get_disp_da(i)
-            pos = self._get_node_da(i)
-            pos.coords["time"] = defo.coords["time"]
-            defos.append(defo)
-            poss.append(pos)
-
-        if alpha and isinstance(alpha, (int, float)) and alpha != 1.0:
-            if self.ModelUpdate:
-                scalars = [np.linalg.norm(resp, axis=-1) for resp in defos]
-                scalars = [np.max(scalar) for scalar in scalars]
-            else:
-                scalars = np.linalg.norm(defos, axis=-1)
-            maxv = np.max(scalars)
-            alpha_ = 0.0 if maxv == 0 else self.max_bound_size * self.pargs.scale_factor / maxv
-            alpha_ = alpha_ * alpha
-        else:
-            alpha_ = 1.0
-        self.defo_scale_factor = alpha_
-
-        if self.ModelUpdate:
-            defo_coords = [alpha_ * np.array(defo) + np.array(pos) for defo, pos in zip(defos, poss)]
-            defo_coords = [
-                xr.DataArray(coords, dims=pos.dims, coords=pos.coords) for coords, pos in zip(defo_coords, poss)
-            ]
-        else:
-            poss_da = xr.concat(poss, dim="time")
-            defo_coords = alpha_ * np.asarray(defos) + np.asarray(poss)
-            defo_coords = xr.DataArray(defo_coords, dims=poss_da.dims, coords=poss_da.coords)
-        self.defo_coords = defo_coords
-
-    def _get_defo_coord_da(self, step, alpha):
-        if alpha and alpha == 0.0:
-            original_coords_da = self._get_node_da(step)
-            return original_coords_da
-        self._set_defo_scale_factor(alpha=alpha)
-        node_deform_coords = self.defo_coords[step] if self.ModelUpdate else self.defo_coords.isel(time=step)
-        return node_deform_coords
 
     def _plot_bc(self, plotter, step: int, defo_scale: float, bc_scale: float):
         fixed_node_data = self._get_bc_da(step)
@@ -210,8 +85,8 @@ class PlotResponseBase:
 
     def _plot_all_mesh(self, plotter, color="#738595", step=0):
         pos = self._get_node_da(step).to_numpy()
-        line_cells, _ = _get_line_cells(self._get_line_da(step))
-        _, unstru_cell_types, unstru_cells = _get_unstru_cells(self._get_unstru_da(step))
+        line_cells, _ = self._get_line_cells(self._get_line_da(step))
+        _, unstru_cell_types, unstru_cells = self._get_unstru_cells(self._get_unstru_da(step))
         output = self._get_plotly_unstru_data(pos, unstru_cell_types, unstru_cells, scalars=None)
         face_line_points = output[1]
         line_points, _ = self._get_plotly_line_data(pos, line_cells, scalars=None)
@@ -224,7 +99,7 @@ class PlotResponseBase:
         steps = []
         idx_cum = 0
         for i in range(self.num_steps):
-            txt = self._make_txt(i) if not showscale else {"text": ""}
+            txt = self._make_title(i) if not showscale else {"text": ""}
             txt["text"] = self.title["text"] + txt["text"]
             step = {
                 "method": "update",
@@ -245,7 +120,7 @@ class PlotResponseBase:
         ]
         coloraxiss = {}
         for i in range(self.num_steps):
-            txt = self._make_txt(i)
+            txt = self._make_title(i)
             coloraxiss[f"coloraxis{i + 1}"] = {
                 "colorscale": self.pargs.cmap,
                 "cmin": clim[0],
@@ -259,7 +134,7 @@ class PlotResponseBase:
         if is_response_step:
             # Layout
             for i in range(len(self.FIGURE.frames)):
-                txt = self._make_txt(i, add_title=True)
+                txt = self._make_title(i, add_title=True)
                 self.FIGURE.frames[i]["layout"].update(title=txt)
             coloraxiss = {}
             coloraxiss["coloraxis"] = {

@@ -7,21 +7,17 @@ from numpy.linalg import norm
 
 from ...post import load_model_data
 from ...utils import CONFIGS, gram_schmidt
-from .plot_resp_base import PlotResponseBase, _plot_bc, _plot_mp_constraint
+from .plot_resp_base import PlotResponsePyvistaBase, _plot_bc, _plot_mp_constraint
 from .plot_utils import (
     PLOT_ARGS,
     _get_ele_color,
-    _get_line_cells,
-    _get_unstru_cells,
     _plot_lines,
     _plot_points,
     _plot_unstru,
 )
 
-PKG_NAME = CONFIGS.get_pkg_name()
 
-
-class PlotModelBase(PlotResponseBase):
+class PlotModelBase(PlotResponsePyvistaBase):
     def __init__(self, model_info: dict, cells: dict):
         # --------------------------------------------------------------
         self.nodal_data = model_info["NodalData"]
@@ -57,11 +53,12 @@ class PlotModelBase(PlotResponseBase):
         self.shell_data = model_info["ShellData"]
         # -------------------------------------------------------------
         self.line_data = model_info["AllLineElesData"]
-        self.line_cells, self.line_tags = _get_line_cells(self.line_data)
+        self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
         self.unstru_data = model_info["UnstructuralData"]
-        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = _get_unstru_cells(self.unstru_data)
+        self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
         # -------------------------------------------------------------
+        self.pkg_name = CONFIGS.get_pkg_name()
         self.pargs = PLOT_ARGS
         pv.set_plot_theme(PLOT_ARGS.theme)
 
@@ -315,6 +312,36 @@ class PlotModelBase(PlotResponseBase):
             self.pargs.font_size,
         )
 
+    def _update_plotter(self, plotter: pv.Plotter, cpos):
+        if isinstance(cpos, str):
+            cpos = cpos.lower()
+            viewer = {
+                "xy": plotter.view_xy,
+                "yx": plotter.view_yx,
+                "xz": plotter.view_xz,
+                "zx": plotter.view_zx,
+                "yz": plotter.view_yz,
+                "zy": plotter.view_zy,
+                "iso": plotter.view_isometric,
+            }
+            if not self.show_zaxis and cpos not in ["xy", "yx"]:
+                cpos = "xy"
+                plotter.enable_2d_style()
+                plotter.enable_parallel_projection()
+            viewer[cpos]()
+
+            if cpos == "iso":  # rotate camera
+                plotter.camera.Azimuth(180)
+        else:
+            plotter.camera_position = cpos
+            if not self.show_zaxis:
+                plotter.view_xy()
+                plotter.enable_2d_style()
+                plotter.enable_parallel_projection()
+
+        plotter.add_axes()
+        return plotter
+
     # def plot_beam_sec(self, plotter, paras):
     #     ext_points = self.MINFO["BeamSecExtPoints"]
     #     int_points = self.MINFO["BeamSecIntPoints"]
@@ -561,7 +588,7 @@ class PlotModelBase(PlotResponseBase):
         return pplot
 
     def add_model_info(self, plotter):
-        txt = f"{PKG_NAME}:: Num. Node: {len(self.nodal_tags)} Num. Ele: {len(self.ele_tags)}"
+        txt = f"{self.pkg_name}:: Num. Node: {len(self.nodal_tags)} Num. Ele: {len(self.ele_tags)}"
         plotter.add_text(txt, position="lower_left", font_size=12, font="courier")
 
 

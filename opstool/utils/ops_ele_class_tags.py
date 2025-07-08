@@ -189,6 +189,7 @@ ELE_TYPE_TAGS = {
     172: "ForceBeamColumn3dThermal",
     173: "ShellMITC4Thermal",
     174: "ShellNLDKGQThermal",
+    268: "ShellNLDKGTThermal",
     175: "ShellANDeS",
     178: "AxEqDispBeamColumn2d",
     179: "FourNodeTetrahedron",
@@ -356,6 +357,7 @@ ELE_TAG_Beam = [
     62,
     621,
     63,
+    631,
     64,
     640,
     641,
@@ -366,8 +368,6 @@ ELE_TAG_Beam = [
     68,
     69,
     70,
-    71,
-    72,
     73,
     731,
     74,
@@ -380,8 +380,19 @@ ELE_TAG_Beam = [
     30765,
     30767,
     79,
-    128,
-    257,
+    145,  # ElasticTimoshenkoBeam2d
+    146,  # ElasticTimoshenkoBeam3d
+    192,  # GradientInelasticBeamColumn2d
+    193,  # GradientInelasticBeamColumn3d
+    128,  # DispBeamColumn2dThermal
+    170,  # DispBeamColumn3dThermal
+    171,  # ForceBeamColumn2dThermal
+    172,  # ForceBeamColumn3dThermal
+    197,  # BeamColumn2DwLHNMYS
+    198,  # BeamColumn3DwLHNMYS
+    206,  # DispBeamColumn3dID
+    211,  # BeamColumn2DwLHNMYS_Damage
+    257,  # E_SFI
     102030,  # ELE_TAG_DispBeamColumn2dWithSensitivity
     1110000,  # ELE_TAG_DispBeamColumn3dWithSensitivity
 ]
@@ -420,14 +431,15 @@ ELE_TAG_Shell = [
     157,
     167,
     168,
-    173,
-    174,
     175,
     203,
     204,
     212,  # MVLEM_3D
     213,  # SFI_MVLEM_3D
     259259,  # MVLEM_3D
+    173,  # ShellMITC4Thermal
+    174,  # ShellNLDKGQThermal
+    268,  # ShellNLDKGTThermal
 ]
 ELE_TAG_Wall = [212, 213, 259259, 162, 163, 257]  # 162-MVLEM2D, 163-SFI_MVLEM2D, 257-E_SFI2D
 ELE_TAG_Joint = [71, 72, 81, 8181, 82, 83]

@@ -1512,7 +1512,9 @@ class FiberSecMesh:
                 self.rebar_data[i]["rebar_xy"][:, 1],
             ) = (x_rot, y_rot)
 
-    def to_opspy_cmds(self, secTag: int, GJ: Optional[float] = None, G: Optional[float] = None):
+    def to_opspy_cmds(
+        self, secTag: int, GJ: Optional[float] = None, G: Optional[float] = None, is_thermal: bool = False
+    ):
         """Generate openseespy fiber section command.
 
         Parameters
@@ -1527,6 +1529,9 @@ class FiberSecMesh:
             Shear modulus. The program automatically calculates the torsion constant.
             Note that at least one of GJ and G needs to be specified,
             and if both, it will be calculated by GJ.
+        is_thermal : bool, default=False
+            If True, will output a FiberThermal section instead of a Fiber section.
+            This is useful for thermal analysis in OpenSees.
 
         Returns
         ----------
@@ -1537,8 +1542,10 @@ class FiberSecMesh:
                 raise ValueError("GJ and G need to assign at least one!")  # noqa: TRY003
             else:
                 GJ = G * self.get_j()
-
-        ops.section("Fiber", secTag, "-GJ", GJ)
+        if is_thermal:
+            ops.section("FiberThermal", secTag, "-GJ", GJ)
+        else:
+            ops.section("Fiber", secTag, "-GJ", GJ)
 
         names = self.fiber_centers_map.keys()
         for name in names:
@@ -1563,6 +1570,7 @@ class FiberSecMesh:
         GJ: Optional[float] = None,
         G: Optional[float] = None,
         fmt=":.6E",
+        is_thermal: bool = False,
     ):
         """Output the opensees fiber code to file.
 
@@ -1587,6 +1595,9 @@ class FiberSecMesh:
             and if both, it will be calculated by GJ.
         fmt : str, default = ":.6E"
             Formatting style for floating point numbers.
+        is_thermal : bool, default=False
+            If True, will output a FiberThermal section instead of a Fiber section.
+            This is useful for thermal analysis in OpenSees.
 
         Returns
         ---------
@@ -1608,13 +1619,16 @@ class FiberSecMesh:
         txt = get_random_color_rich(output_path)
         CONSOLE.print(f"{PKG_PREFIX} The file {txt} has been successfully written!")
 
-    def _to_tcl(self, output_path, names, sec_tag, gj, fmt=":.6E"):
+    def _to_tcl(self, output_path, names, sec_tag, gj, fmt=":.6E", is_thermal=False):
         with open(output_path, "w+") as output:
             output.write("# This document was created from opstool.SecMesh\n")
             output.write("# Author: Yexiang Yan  yexiang_yan@outlook.com\n\n")
             output.write(f"set secTag {sec_tag}\n")
             temp = "{"
-            output.write(f"section fiberSec $secTag -GJ {gj} {temp};    # Define the fiber section\n")
+            if is_thermal:
+                output.write(f"section FiberThermal $secTag -GJ {gj} {temp};    # Define the fiber section\n")
+            else:
+                output.write(f"section Fiber $secTag -GJ {gj} {temp};    # Define the fiber section\n")
             txt = f"fiber {{{fmt}}} {{{fmt}}} {{{fmt}}} {{}};\n"
             for name in names:
                 centers = self.fiber_centers_map[name]
@@ -1633,12 +1647,15 @@ class FiberSecMesh:
                     output.write(txt.format(xy[0], xy[1], area, mat_tag))
             output.write("};    # end of fibersection definition\n")
 
-    def _to_py(self, output_path, names, sec_tag, gj, fmt=":.6E"):
+    def _to_py(self, output_path, names, sec_tag, gj, fmt=":.6E", is_thermal=False):
         with open(output_path, "w+") as output:
             output.write("# This document was created from opstool.SecMesh\n")
             output.write("# Author: Yexiang Yan  yexiang_yan@outlook.com\n\n")
             output.write("import openseespy.opensees as ops\n\n\n")
-            output.write(f"ops.section('Fiber', {sec_tag}, '-GJ', {gj})  # Define the fiber section\n")
+            if is_thermal:
+                output.write(f"ops.section('FiberThermal', {sec_tag}, '-GJ', {gj})  # Define the fiber section\n")
+            else:
+                output.write(f"ops.section('Fiber', {sec_tag}, '-GJ', {gj})  # Define the fiber section\n")
             txt = f"ops.fiber({{{fmt}}}, {{{fmt}}}, {{{fmt}}}, {{}})\n"
             for name in names:
                 centers = self.fiber_centers_map[name]

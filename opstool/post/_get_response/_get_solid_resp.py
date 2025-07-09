@@ -81,6 +81,8 @@ class BrickRespStepData(ResponseBase):
                 ele_tags, strains, method=self.nodal_resp_method, dtype=self.dtype
             )
             self.node_tags = node_tags
+            if len(node_tags) == 0:
+                self.compute_nodal_resp = False
 
         if self.stressDOFs is None:
             if stresses.shape[-1] == 6:

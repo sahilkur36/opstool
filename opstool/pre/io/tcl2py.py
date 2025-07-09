@@ -1,5 +1,7 @@
 import tkinter
 
+from rich import print as rprint
+
 
 def tcl2py(
     input_file: str,
@@ -18,8 +20,7 @@ def tcl2py(
           ``set ok [analyze 1]``, ``set lambdaN [eigen 10]``, it will trigger
           an error! This is because **this function does not run the OpenSees command at all**.
 
-        * If an encoding error is reported, please check the file and delete any special
-          characters that exist, such as some Chinese characters that cannot be encoded.
+        * If an encoding error is reported, please use software such as vscode to re-save the file encoding as ``UTF-8`` in advance.
 
     Parameters
     ----------
@@ -53,14 +54,21 @@ def tcl2py(
             tcl_list = f.readlines()
         for i, src in enumerate(tcl_list):
             if src[0] == "#":
-                tcl_list[i] = src.replace("#", "commits___ ").replace("$", "variable___ ")
+                tcl_list[i] = (
+                    src.replace("###", "comments___ ")
+                    .replace("##", "comments___ ")
+                    .replace("#", "comments___ ")
+                    .replace("$", "variable___ ")
+                )
         tcl_src = "".join(tcl_list)
     else:
         with open(input_file, encoding=encoding) as f:
             tcl_src = f.read()
     tcl_src = tcl_src.replace("{", " { ")
     tcl_src = tcl_src.replace("}", " } ")
-    ops_interp = __OPSInterp(prefix)
+    tcl_src = tcl_src.replace("#", "# ")
+
+    ops_interp = __OPSInterp(prefix, keep_comments=keep_comments)
 
     try:
         ops_interp.eval(tcl_src)
@@ -70,7 +78,7 @@ def tcl2py(
             fw.write(import_txt)
             for line in ops_interp.get_opspy_cmds():
                 fw.write(line + "\n")
-    print(
+    rprint(
         f"[bold #34bf49]OpenSeesPy[/bold #34bf49] file "
         f"[bold #d20962]{output_file}[/bold #d20962] has been created successfully!"
     )
@@ -89,20 +97,44 @@ def _type_convert(a):
 
 
 def _remove_commit(args, obj="#"):
-    if "#" in args:
+    if obj in args:
         idx = args.index(obj)
         args = args[:idx]
     return args
 
 
+def _process_args(args, keep_comments=False):
+    comments = ""
+    if "#" in args:
+        idx = args.index("#")
+        if keep_comments:
+            comments = " ".join(args[idx:])
+            comments = "  " + comments
+        args = args[:idx]
+    args = tuple([_type_convert(i) for i in args])
+    return args, comments
+
+
+def _get_cmds(args, cmd, prefix, keep_comments=False):
+    args, comments = _process_args(args, keep_comments=keep_comments)
+    if len(args) == 1:
+        if isinstance(args[0], str):
+            return f"{prefix}{cmd}('{args[0]}'){comments}"
+        else:
+            return f"{prefix}{cmd}({args[0]}){comments}"
+    else:
+        return f"{prefix}{cmd}{args}{comments}"
+
+
 class __OPSInterp:
-    def __init__(self, prefix) -> None:
+    def __init__(self, prefix, keep_comments) -> None:
         self.prefix = prefix
+        self.keep_comments = keep_comments
         self.interp = tkinter.Tcl()
         self.contents = []
 
-    def _commits(self, *args):
-        args = [src.replace("commits___", "#") for src in args]
+    def _comments(self, *args):
+        args = [src.replace("comments___", "#") for src in args]
         args = [src.replace("variable___", "$") for src in args]
         if args:
             args = " ".join(args).replace("# ", "#").replace("$ ", "$")
@@ -117,78 +149,63 @@ class __OPSInterp:
             self.contents.append(f"print{args}")
 
     def _wipe(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}wipe{args}")
+        src = _get_cmds(args, "wipe", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _model(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}model{args}")
+        src = _get_cmds(args, "model", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _node(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}node{args}")
+        src = _get_cmds(args, "node", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _fix(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}fix{args}")
+        src = _get_cmds(args, "fix", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _fixX(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}fixX{args}")
+        src = _get_cmds(args, "fixX", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _fixY(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}fixY{args}")
+        src = _get_cmds(args, "fixY", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _fixZ(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}fixZ{args}")
+        src = _get_cmds(args, "fixZ", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _equalDOF(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}equalDOF{args}")
+        src = _get_cmds(args, "equalDOF", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _equalDOF_Mixed(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}equalDOF_Mixed{args}")
+        src = _get_cmds(args, "equalDOF_Mixed", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _rigidDiaphragm(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}rigidDiaphragm{args}")
+        src = _get_cmds(args, "rigidDiaphragm", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _rigidLink(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}rigidLink{args}")
+        src = _get_cmds(args, "rigidLink", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _uniaxialMaterial(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}uniaxialMaterial{args}")
+        src = _get_cmds(args, "uniaxialMaterial", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nDMaterial(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nDMaterial{args}")
+        src = _get_cmds(args, "nDMaterial", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _beamIntegration(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}beamIntegration{args}")
+        src = _get_cmds(args, "beamIntegration", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _section(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
         if args[0] in (
             "Fiber",
             "fiberSec",
@@ -199,41 +216,49 @@ class __OPSInterp:
             "NDFiberWarping",
         ):
             if args[0] not in ["NDFiber", "NDFiberWarping"] and ("-GJ" not in args or "-torsion" not in args):
-                print(
+                rprint(
                     "[bold #d20962]Warning[/bold #d20962]: "
                     "-GJ or -torsion not used for fiber section, GJ=100000000 is assumed!"
                 )
                 new_args = (args[0], args[1], "-GJ", 1.0e8)
             else:
                 new_args = args[:4]
-            self.contents.append(f"{self.prefix}section{new_args}")
+            self.contents.append(f"{self.prefix}section{new_args}{comments}")
             txt = args[-1]
             txt.replace("\\n", "")
             self.interp.eval(txt)
         else:
-            self.contents.append(f"{self.prefix}section{args}")
+            self.contents.append(f"{self.prefix}section{args}{comments}")
 
     def _fiber(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}fiber{args}")
+        src = _get_cmds(args, "fiber", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _patch(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}patch{args}")
+        src = _get_cmds(args, "patch", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _layer(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}layer{args}")
+        src = _get_cmds(args, "layer", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _element(self, *args):
-        args = _remove_commit(args)
-        args = [_type_convert(i) for i in args]
-        if args[0] not in ["nonlinearBeamColumn", "forceBeamColumn", "dispBeamColumn"]:
-            args = tuple([_type_convert(i) for i in args])
-            self.contents.append(f"{self.prefix}element{args}")
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
+        if args[0] not in [
+            "nonlinearBeamColumn",
+            "forceBeamColumn",
+            "dispBeamColumn",
+            "forceBeamColumnCBDI",
+            "forceBeamColumnCSBDI",
+            "forceBeamColumnWarping",
+            "forceBeamColumnThermal",
+            "elasticForceBeamColumnWarping",
+            "dispBeamColumnNL",
+            "dispBeamColumnThermal",
+            "nonlinearBeamColumn",
+            "dispBeamColumnWithSensitivity",
+        ]:
+            self.contents.append(f"{self.prefix}element{args}{comments}")
         else:
             eleTag = args[1]
             secTag = args[5]
@@ -245,6 +270,15 @@ class __OPSInterp:
                 else:
                     self.contents.append(f"{self.prefix}beamIntegration('Lobatto', {eleTag}, {secTag}, {Np})")
                 idx = 7
+            elif secTag == "-sections":  # Handle variable section tags
+                Np = args[4]
+                sectags = args[6 : 6 + Np]
+                transfTag = args[6 + Np]
+                idx = 6 + Np + 1
+                if args[0] == "dispBeamColumn":
+                    self.contents.append(f"{self.prefix}beamIntegration('Legendre', {eleTag}, {Np}, *{sectags})")
+                else:
+                    self.contents.append(f"{self.prefix}beamIntegration('Lobatto', {eleTag}, {Np}, *{sectags})")
             else:
                 transfTag = args[4]
                 interp_paras = []
@@ -256,21 +290,21 @@ class __OPSInterp:
                         idx += i
                         break
                 self.contents.append(f"{self.prefix}beamIntegration('{args[5]}', {eleTag}, *{interp_paras})")
+            # write the element command
             if args[0] == "nonlinearBeamColumn":
                 args[0] = "forceBeamColumn"
-            if "-mass" not in args and "-iter" not in args:
+            if "-mass" not in args and "-iter" not in args and "-cMass" not in args:
                 self.contents.append(
-                    f"{self.prefix}element('{args[0]}', {eleTag}, {args[2]}, {args[3]}, {transfTag}, {eleTag})"
+                    f"{self.prefix}element('{args[0]}', {eleTag}, {args[2]}, {args[3]}, {transfTag}, {eleTag}){comments}"
                 )
             else:
                 self.contents.append(
                     f"{self.prefix}element('{args[0]}', {eleTag}, {args[2]}, "
-                    f"{args[3]}, {transfTag}, {eleTag}, *{args[idx:]})"
+                    f"{args[3]}, {transfTag}, {eleTag}, *{args[idx:]}){comments}"
                 )
 
     def _timeSeries(self, *args):
-        args = _remove_commit(args)
-        args = [_type_convert(i) for i in args]
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
         if args[0] in ["Path", "Series"]:
             if ("-time" in args) or ("-values" in args):
                 time, values = None, None
@@ -287,24 +321,23 @@ class __OPSInterp:
                     args.pop(idx)
                     args.pop(idx)
                 if time and values:
-                    args = args[:2] + ["-time", *time, "-values", *values] + args[2:]
+                    args = [*args[:2], "-time", *time, "-values", *values, *args[2:]]
                 elif values is None:
-                    args = args[:2] + ["-time", *time] + args[2:]
+                    args = [*args[:2], "-time", *time, *args[2:]]
                 else:
-                    args = args[:2] + ["-values", *values] + args[2:]
-                txt = f"{self.prefix}timeSeries('Path', {args[1]}, *{args[2:]})"
+                    args = [*args[:2], "-values", *values, *args[2:]]
+                txt = f"{self.prefix}timeSeries('Path', {args[1]}, *{args[2:]}){comments}"
                 self.contents.append(txt)
             else:
-                self.contents.append(f"{self.prefix}timeSeries{tuple(args)}")
+                self.contents.append(f"{self.prefix}timeSeries{tuple(args)}{comments}")
         else:
-            self.contents.append(f"{self.prefix}timeSeries{tuple(args)}")
+            self.contents.append(f"{self.prefix}timeSeries{tuple(args)}{comments}")
 
     def _pattern(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
         if args[0].lower() != "uniformexcitation":
             if args[0].lower() == "plain" and isinstance(args[2], str):
-                print(
+                rprint(
                     f"[bold #d20962]Warning[/bold #d20962]: OpenSeesPy not support a str "
                     f"[bold #0099e5]{args[2]}[/bold #0099e5] "
                     f"followed [bold #ff4c4c]plain[/bold #ff4c4c], "
@@ -320,68 +353,57 @@ class __OPSInterp:
                 args = list(args)
                 args[2] = args[1]
                 args = tuple(args)
-                self.contents.append(f"{self.prefix}pattern{args[:-1]}")
+                self.contents.append(f"{self.prefix}pattern{args[:-1]}{comments}")
             else:
-                self.contents.append(f"{self.prefix}pattern{args[:-1]}")
+                self.contents.append(f"{self.prefix}pattern{args[:-1]}{comments}")
             txt = args[-1]
             txt.replace("\\n", "")
             self.interp.eval(txt)
         else:
-            self.contents.append(f"{self.prefix}pattern{args}")
+            self.contents.append(f"{self.prefix}pattern{args}{comments}")
 
     def _load(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}load{args}")
+        src = _get_cmds(args, "load", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleLoad(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleLoad{args}")
+        src = _get_cmds(args, "eleLoad", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sp(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sp{args}")
+        src = _get_cmds(args, "sp", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _groundMotion(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}groundMotion{args}")
+        src = _get_cmds(args, "groundMotion", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _imposedMotion(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}imposedMotion{args}")
+        src = _get_cmds(args, "imposedMotion", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _mass(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}mass{args}")
+        src = _get_cmds(args, "mass", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _frictionModel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}frictionModel{args}")
+        src = _get_cmds(args, "frictionModel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _geomTransf(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}geomTransf{args}")
+        src = _get_cmds(args, "geomTransf", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _region(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}region{args}")
+        src = _get_cmds(args, "region", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _rayleigh(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}rayleigh{args}")
+        src = _get_cmds(args, "rayleigh", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _block2D(self, *args):
-        args = _remove_commit(args)
-        args = [_type_convert(i) for i in args]
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
         txt = args[-1]
         txt = txt.replace("\n", "").replace("\t", " ")
         crds = txt.split()
@@ -396,12 +418,11 @@ class __OPSInterp:
         else:
             args = [f"'{i}'" if isinstance(i, str) else str(i) for i in args[:-1]]
             args.append("*crds")
-        txt = f"{self.prefix}block2D(" + ", ".join(args) + ")"
+        txt = f"{self.prefix}block2D(" + ", ".join(args) + f"){comments}"
         self.contents.append(txt)
 
     def _block3D(self, *args):
-        args = _remove_commit(args)
-        args = [_type_convert(i) for i in args]
+        args, comments = _process_args(args, keep_comments=self.keep_comments)
         txt = args[-1]
         txt = txt.replace("\n", "").replace("\t", " ")
         crds = txt.split()
@@ -416,881 +437,707 @@ class __OPSInterp:
         else:
             args = [f"'{i}'" if isinstance(i, str) else str(i) for i in args[:-1]]
             args.append("*crds")
-        txt = f"{self.prefix}block3D(" + ", ".join(args) + ")"
+        txt = f"{self.prefix}block3D(" + ", ".join(args) + f"){comments}"
         self.contents.append(txt)
 
     def _ShallowFoundationGen(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}ShallowFoundationGen{args}")
+        src = _get_cmds(args, "ShallowFoundationGen", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _constraints(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}constraints{args}")
+        src = _get_cmds(args, "constraints", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _numberer(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}numberer{args}")
+        src = _get_cmds(args, "numberer", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _system(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}system{args}")
+        src = _get_cmds(args, "system", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _test(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}test{args}")
+        src = _get_cmds(args, "test", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _algorithm(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}algorithm{args}")
+        src = _get_cmds(args, "algorithm", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _integrator(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}integrator{args}")
+        src = _get_cmds(args, "integrator", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _analysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}analysis{args}")
+        src = _get_cmds(args, "analysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eigen(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eigen{args}")
+        src = _get_cmds(args, "eigen", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
         return None
 
     def _analyze(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}analyze{args}")
+        src = _get_cmds(args, "analyze", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
         return None
 
     def _modalProperties(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}modalProperties{args}")
+        src = _get_cmds(args, "modalProperties", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
         return None
 
     def _responseSpectrumAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}responseSpectrumAnalysis{args}")
+        src = _get_cmds(args, "responseSpectrumAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _recorder(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}recorder{args}")
+        src = _get_cmds(args, "recorder", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _record(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}record{args}")
+        src = _get_cmds(args, "record", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _print(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}printModel{args}")
+        src = _get_cmds(args, "printModel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _printA(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}printA{args}")
+        src = _get_cmds(args, "printA", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _logFile(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}logFile{args}")
+        src = _get_cmds(args, "logFile", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _remove(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}remove{args}")
+        src = _get_cmds(args, "remove", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _loadConst(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}loadConst{args}")
+        src = _get_cmds(args, "loadConst", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _wipeAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}wipeAnalysis{args}")
+        src = _get_cmds(args, "wipeAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _modalDamping(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}modalDamping{args}")
+        src = _get_cmds(args, "modalDamping", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _database(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}database{args}")
+        src = _get_cmds(args, "database", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getTime(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getTime{args}")
+        src = _get_cmds(args, "getTime", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setTime(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setTime{args}")
+        src = _get_cmds(args, "setTime", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _testUniaxialMaterial(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}testUniaxialMaterial{args}")
+        src = _get_cmds(args, "testUniaxialMaterial", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setStrain(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setStrain{args}")
+        src = _get_cmds(args, "setStrain", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getStrain(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getStrain{args}")
+        src = _get_cmds(args, "getStrain", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getStress(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getStress{args}")
+        src = _get_cmds(args, "getStress", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getTangent(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getTangent{args}")
+        src = _get_cmds(args, "getTangent", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getDampTangent(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getDampTangent{args}")
+        src = _get_cmds(args, "getDampTangent", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _reactions(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}reactions{args}")
+        src = _get_cmds(args, "reactions", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeReaction(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeReaction{args}")
+        src = _get_cmds(args, "nodeReaction", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeEigenvector(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeEigenvector{args}")
+        src = _get_cmds(args, "nodeEigenvector", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setCreep(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setCreep{args}")
+        src = _get_cmds(args, "setCreep", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleResponse(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleResponse{args}")
+        src = _get_cmds(args, "eleResponse", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _reset(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}reset{args}")
+        src = _get_cmds(args, "reset", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _initialize(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}initialize{args}")
+        src = _get_cmds(args, "initialize", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getLoadFactor(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getLoadFactor{args}")
+        src = _get_cmds(args, "getLoadFactor", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _build(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}build{args}")
+        src = _get_cmds(args, "build", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _printGID(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}printGID{args}")
+        src = _get_cmds(args, "printGID", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getCTestNorms(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getCTestNorms{args}")
+        src = _get_cmds(args, "getCTestNorms", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getCTestIter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getCTestIter{args}")
+        src = _get_cmds(args, "getCTestIter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _save(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}save{args}")
+        src = _get_cmds(args, "save", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _restore(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}restore{args}")
+        src = _get_cmds(args, "restore", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleForce(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleForce{args}")
+        src = _get_cmds(args, "eleForce", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleDynamicalForce(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleDynamicalForce{args}")
+        src = _get_cmds(args, "eleDynamicalForce", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeUnbalance(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeUnbalance{args}")
+        src = _get_cmds(args, "nodeUnbalance", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeDisp(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeDisp{args}")
+        src = _get_cmds(args, "nodeDisp", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNodeDisp(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNodeDisp{args}")
+        src = _get_cmds(args, "setNodeDisp", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeVel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeVel{args}")
+        src = _get_cmds(args, "nodeVel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNodeVel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNodeVel{args}")
+        src = _get_cmds(args, "setNodeVel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeAccel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeAccel{args}")
+        src = _get_cmds(args, "nodeAccel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNodeAccel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNodeAccel{args}")
+        src = _get_cmds(args, "setNodeAccel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeResponse(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeResponse{args}")
+        src = _get_cmds(args, "nodeResponse", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeCoord(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeCoord{args}")
+        src = _get_cmds(args, "nodeCoord", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNodeCoord(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNodeCoord{args}")
+        src = _get_cmds(args, "setNodeCoord", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _updateElementDomain(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}updateElementDomain{args}")
+        src = _get_cmds(args, "updateElementDomain", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNDMM(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNDM{args}")
+        src = _get_cmds(args, "getNDM", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNDFF(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNDF{args}")
+        src = _get_cmds(args, "getNDF", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleNodes(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleNodes{args}")
+        src = _get_cmds(args, "eleNodes", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _eleType(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}eleType{args}")
+        src = _get_cmds(args, "eleType", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeDOFs(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeDOFs{args}")
+        src = _get_cmds(args, "nodeDOFs", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeMass(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeMass{args}")
+        src = _get_cmds(args, "nodeMass", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodePressure(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodePressure{args}")
+        src = _get_cmds(args, "nodePressure", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNodePressure(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNodePressure{args}")
+        src = _get_cmds(args, "setNodePressure", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _nodeBounds(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}nodeBounds{args}")
+        src = _get_cmds(args, "nodeBounds", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _startTimer(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}start{args}")
+        src = _get_cmds(args, "start", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _stopTimer(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}stop{args}")
+        src = _get_cmds(args, "stop", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _modalDampingQ(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}modalDampingQ{args}")
+        src = _get_cmds(args, "modalDampingQ", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setElementRayleighDampingFactors(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setElementRayleighDampingFactors{args}")
+        src = _get_cmds(args, "setElementRayleighDampingFactors", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setPrecision(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setPrecision{args}")
+        src = _get_cmds(args, "setPrecision", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _searchPeerNGA(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}searchPeerNGA{args}")
+        src = _get_cmds(args, "searchPeerNGA", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _domainChange(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}domainChange{args}")
+        src = _get_cmds(args, "domainChange", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _defaultUnits(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}defaultUnits{args}")
+        src = _get_cmds(args, "defaultUnits", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _stripXML(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}stripXML{args}")
+        src = _get_cmds(args, "stripXML", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _convertBinaryToText(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}convertBinaryToText{args}")
+        src = _get_cmds(args, "convertBinaryToText", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _convertTextToBinary(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}convertTextToBinary{args}")
+        src = _get_cmds(args, "convertTextToBinary", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getEleTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getEleTags{args}")
+        src = _get_cmds(args, "getEleTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getCrdTransfTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getCrdTransfTags{args}")
+        src = _get_cmds(args, "getCrdTransfTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNodeTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNodeTags{args}")
+        src = _get_cmds(args, "getNodeTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getParamTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getParamTags{args}")
+        src = _get_cmds(args, "getParamTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getParamValue(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getParamValue{args}")
+        src = _get_cmds(args, "getParamValue", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionForce(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionForce{args}")
+        src = _get_cmds(args, "sectionForce", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionDeformation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionDeformation{args}")
+        src = _get_cmds(args, "sectionDeformation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionStiffness(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionStiffness{args}")
+        src = _get_cmds(args, "sectionStiffness", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionFlexibility(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionFlexibility{args}")
+        src = _get_cmds(args, "sectionFlexibility", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionLocation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionLocation{args}")
+        src = _get_cmds(args, "sectionLocation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionWeight(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionWeight{args}")
+        src = _get_cmds(args, "sectionWeight", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionTag(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionTag{args}")
+        src = _get_cmds(args, "sectionTag", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sectionDisplacement(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sectionDisplacement{args}")
+        src = _get_cmds(args, "sectionDisplacement", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _cbdiDisplacement(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}cbdiDisplacement{args}")
+        src = _get_cmds(args, "cbdiDisplacement", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _basicDeformation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}basicDeformation{args}")
+        src = _get_cmds(args, "basicDeformation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _basicForce(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}basicForce{args}")
+        src = _get_cmds(args, "basicForce", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _basicStiffness(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}basicStiffness{args}")
+        src = _get_cmds(args, "basicStiffness", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _InitialStateAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}InitialStateAnalysis{args}")
+        src = _get_cmds(args, "InitialStateAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _totalCPU(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}totalCPU{args}")
+        src = _get_cmds(args, "totalCPU", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _solveCPU(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}solveCPU{args}")
+        src = _get_cmds(args, "solveCPU", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _accelCPU(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}accelCPU{args}")
+        src = _get_cmds(args, "accelCPU", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _numFact(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}numFact{args}")
+        src = _get_cmds(args, "numFact", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _numIter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}numIter{args}")
+        src = _get_cmds(args, "numIter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _systemSize(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}systemSize{args}")
+        src = _get_cmds(args, "systemSize", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _version(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}version{args}")
+        src = _get_cmds(args, "version", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setMaxOpenFiles(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setMaxOpenFiles{args}")
+        src = _get_cmds(args, "setMaxOpenFiles", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _limitCurve(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}limitCurve{args}")
+        src = _get_cmds(args, "limitCurve", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setElementRayleighFactors(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setElementRayleighFactors{args}")
+        src = _get_cmds(args, "setElementRayleighFactors", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _mesh(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}mesh{args}")
+        src = _get_cmds(args, "mesh", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _remesh(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}remesh{args}")
+        src = _get_cmds(args, "remesh", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _parameter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}parameter{args}")
+        src = _get_cmds(args, "parameter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _addToParameter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}addToParameter{args}")
+        src = _get_cmds(args, "addToParameter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _updateParameter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}updateParameter{args}")
+        src = _get_cmds(args, "updateParameter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setParameter(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setParameter{args}")
+        src = _get_cmds(args, "setParameter", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getPID(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getPID{args}")
+        src = _get_cmds(args, "getPID", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNP(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNP{args}")
+        src = _get_cmds(args, "getNP", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _barrier(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}barrier{args}")
+        src = _get_cmds(args, "barrier", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _send(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}send{args}")
+        src = _get_cmds(args, "send", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _recv(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}recv{args}")
+        src = _get_cmds(args, "recv", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _Bcast(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}Bcast{args}")
+        src = _get_cmds(args, "Bcast", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _computeGradients(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}computeGradients{args}")
+        src = _get_cmds(args, "computeGradients", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensitivityAlgorithm(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensitivityAlgorithm{args}")
+        src = _get_cmds(args, "sensitivityAlgorithm", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensNodeDisp(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensNodeDisp{args}")
+        src = _get_cmds(args, "sensNodeDisp", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensNodeVel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensNodeVel{args}")
+        src = _get_cmds(args, "sensNodeVel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensNodeAccel(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensNodeAccel{args}")
+        src = _get_cmds(args, "sensNodeAccel", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensLambda(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensLambda{args}")
+        src = _get_cmds(args, "sensLambda", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensSectionForce(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensSectionForce{args}")
+        src = _get_cmds(args, "sensSectionForce", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sensNodePressure(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sensNodePressure{args}")
+        src = _get_cmds(args, "sensNodePressure", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNumElements(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNumElements{args}")
+        src = _get_cmds(args, "getNumElements", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getEleClassTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getEleClassTags{args}")
+        src = _get_cmds(args, "getEleClassTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getEleLoadClassTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getEleLoadClassTags{args}")
+        src = _get_cmds(args, "getEleLoadClassTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getEleLoadTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getEleLoadTags{args}")
+        src = _get_cmds(args, "getEleLoadTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getEleLoadData(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getEleLoadData{args}")
+        src = _get_cmds(args, "getEleLoadData", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNodeLoadTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNodeLoadTags{args}")
+        src = _get_cmds(args, "getNodeLoadTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNodeLoadData(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNodeLoadData{args}")
+        src = _get_cmds(args, "getNodeLoadData", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _randomVariable(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}randomVariable{args}")
+        src = _get_cmds(args, "randomVariable", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVTags{args}")
+        src = _get_cmds(args, "getRVTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVMean(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVMean{args}")
+        src = _get_cmds(args, "getRVMean", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVStdv(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVStdv{args}")
+        src = _get_cmds(args, "getRVStdv", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVPDF(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVPDF{args}")
+        src = _get_cmds(args, "getRVPDF", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVCDF(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVCDF{args}")
+        src = _get_cmds(args, "getRVCDF", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getRVInverseCDF(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getRVInverseCDF{args}")
+        src = _get_cmds(args, "getRVInverseCDF", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _addCorrelate(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}addCorrelate{args}")
+        src = _get_cmds(args, "addCorrelate", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _correlate(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}correlate{args}")
+        src = _get_cmds(args, "correlate", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _performanceFunction(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}performanceFunction{args}")
+        src = _get_cmds(args, "performanceFunction", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _gradPerformanceFunction(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}gradPerformanceFunction{args}")
+        src = _get_cmds(args, "gradPerformanceFunction", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _transformUtoX(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}transformUtoX{args}")
+        src = _get_cmds(args, "transformUtoX", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _wipeReliability(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}wipeReliability{args}")
+        src = _get_cmds(args, "wipeReliability", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _updateMaterialStage(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}updateMaterialStage{args}")
+        src = _get_cmds(args, "updateMaterialStage", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _sdfResponse(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}sdfResponse{args}")
+        src = _get_cmds(args, "sdfResponse", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _probabilityTransformation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}probabilityTransformation{args}")
+        src = _get_cmds(args, "probabilityTransformation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _startPoint(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}startPoint{args}")
+        src = _get_cmds(args, "startPoint", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _randomNumberGenerator(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}randomNumberGenerator{args}")
+        src = _get_cmds(args, "randomNumberGenerator", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _reliabilityConvergenceCheck(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}reliabilityConvergenceCheck{args}")
+        src = _get_cmds(args, "reliabilityConvergenceCheck", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _searchDirection(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}searchDirection{args}")
+        src = _get_cmds(args, "searchDirection", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _meritFunctionCheck(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}meritFunctionCheck{args}")
+        src = _get_cmds(args, "meritFunctionCheck", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _stepSizeRule(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}stepSizeRule{args}")
+        src = _get_cmds(args, "stepSizeRule", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _rootFinding(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}rootFinding{args}")
+        src = _get_cmds(args, "rootFinding", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _functionEvaluator(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}functionEvaluator{args}")
+        src = _get_cmds(args, "functionEvaluator", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _gradientEvaluator(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}gradientEvaluator{args}")
+        src = _get_cmds(args, "gradientEvaluator", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _runFOSMAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}runFOSMAnalysis{args}")
+        src = _get_cmds(args, "runFOSMAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _findDesignPoint(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}findDesignPoint{args}")
+        src = _get_cmds(args, "findDesignPoint", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _runFORMAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}runFORMAnalysis{args}")
+        src = _get_cmds(args, "runFORMAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getLSFTags(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getLSFTags{args}")
+        src = _get_cmds(args, "getLSFTags", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _runImportanceSamplingAnalysis(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}runImportanceSamplingAnalysis{args}")
+        src = _get_cmds(args, "runImportanceSamplingAnalysis", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _IGA(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}IGA{args}")
+        src = _get_cmds(args, "IGA", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _NDTest(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}NDTest{args}")
+        src = _get_cmds(args, "NDTest", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _getNumThreads(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}getNumThreads{args}")
+        src = _get_cmds(args, "getNumThreads", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setNumThreads(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setNumThreads{args}")
+        src = _get_cmds(args, "setNumThreads", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _setStartNodeTag(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}setStartNodeTag{args}")
+        src = _get_cmds(args, "setStartNodeTag", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _hystereticBackbone(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}hystereticBackbone{args}")
+        src = _get_cmds(args, "hystereticBackbone", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _stiffnessDegradation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}stiffnessDegradation{args}")
+        src = _get_cmds(args, "stiffnessDegradation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _strengthDegradation(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}strengthDegradation{args}")
+        src = _get_cmds(args, "strengthDegradation", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _unloadingRule(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}unloadingRule{args}")
+        src = _get_cmds(args, "unloadingRule", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _partition(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}partition{args}")
+        src = _get_cmds(args, "partition", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _pc(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}pressureConstraint{args}")
+        src = _get_cmds(args, "pressureConstraint", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     def _domainCommitTag(self, *args):
-        args = _remove_commit(args)
-        args = tuple([_type_convert(i) for i in args])
-        self.contents.append(f"{self.prefix}domainCommitTag{args}")
+        src = _get_cmds(args, "domainCommitTag", prefix=self.prefix, keep_comments=self.keep_comments)
+        self.contents.append(src)
 
     @staticmethod
     def _display(*args):
@@ -1313,7 +1160,7 @@ class __OPSInterp:
         print(f"This display <vrp {args}> function will be ignored!")
 
     def _createcommand(self):
-        self.interp.createcommand("commits___", self._commits)
+        self.interp.createcommand("comments___", self._comments)
         self.interp.createcommand("puts", self._puts)
         self.interp.createcommand("wipe", self._wipe)
         self.interp.createcommand("model", self._model)

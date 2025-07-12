@@ -1,5 +1,5 @@
 # opstool
-*Pre-Processing, Post-Processing, and Visualization Tailored for OpenSeesPy*
+*Pre-Processing, Post-Processing, and Visualization Tailored for OpenSeesPy and OpenSees*
 
 [![pypi](https://img.shields.io/pypi/v/opstool)](https://pypi.org/project/opstool/)
 [![Downloads](https://static.pepy.tech/badge/opstool)](https://pepy.tech/project/opstool)
@@ -13,6 +13,8 @@ with [OpenSees](https://opensees.berkeley.edu/) and [OpenSeesPy](https://opensee
 It provides advanced tools for preprocessing, postprocessing, and visualization, making structural 
 simulations more efficient and accessible.
 
+
+## Installation
 The package is still under development.
 To use, install `opstool` from [opstool-PyPI](https://pypi.org/project/opstool/):
 
@@ -21,14 +23,23 @@ pip install --upgrade opstool
 ```
 
 The restriction on the python version mainly depends on `openseespy`,
-it is recommended that you use [Anaconda](https://www.anaconda.com/) to avoid library version incompatibilities.
+it is recommended that you use [Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) or [Anaconda Distribution](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) to avoid library version incompatibilities.
 
+After installing, open Anaconda Prompt to execute the following code:
 ```bash
 conda create -n opensees python=3.12 numpy scipy pandas xarray notebook matplotlib
 conda activate opensees
 pip install openseespy
 pip install opstool
 ```
+
+![image.png](https://s2.loli.net/2025/07/12/WIkihvDXMKBcwJF.png)
+
+* The first line of code will create an environment called ``opensees`` and install Python 3.12 and libraries such as numpy, scipy, pandas, xarray, notebook, matplotlib, etc. 
+* Please use ``conda activate opensees`` to activate the environment, and then you can install various third-party packages in the environment, such as ``pip install openseespy`` and ``pip install opstool``.
+* You can also install the packages from [anaconda / packages](https://anaconda.org/anaconda/repo), such as ``conda install conda-forge::scikit-learn``.
+
+
 
 ## Document
 
@@ -52,32 +63,33 @@ DOI: [https://doi.org/10.1016/j.softx.2025.102126](https://www.sciencedirect.com
 
 1. **Preprocessing Tools**:
    - *Fiber Section Meshing*: Generate detailed fiber meshes for various geometries.
-      - <a href="https://sm.ms/image/lXGLVFKmIcSsvgN" target="_blank"><img src="https://s2.loli.net/2025/02/09/lXGLVFKmIcSsvgN.png" height="200"></a> 
-        <a href="https://sm.ms/image/nIxAhN8rLBEQi2t" target="_blank"><img src="https://s2.loli.net/2025/02/09/nIxAhN8rLBEQi2t.png" height="200"></a>
+      - <a href="https://opstool.readthedocs.io/en/latest/src/pre/sec_mesh.html" target="_blank"><img src="https://s2.loli.net/2025/07/12/thTxbWLXoeFrq2d.png" height="200"></a> 
+        <a href="https://opstool.readthedocs.io/en/latest/examples/section.mesh/composite_mesh.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/nIxAhN8rLBEQi2t.png" height="200"></a>
    - *GMSH Integration*: Import and convert [Gmsh](https://gmsh.info/) models, including geometry, mesh, and physical groups.
-      - <a href="https://sm.ms/image/MjoviYLrtqNHKCO" target="_blank"><img src="https://s2.loli.net/2025/02/09/MjoviYLrtqNHKCO.png" height="200"></a>
-        <a href="https://sm.ms/image/XBVvRcGnePsJK8A" target="_blank"><img src="https://s2.loli.net/2025/02/09/XBVvRcGnePsJK8A.png" height="200"></a>
+      - <a href="https://opstool.readthedocs.io/en/latest/src/pre/read_gmsh.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/MjoviYLrtqNHKCO.png" height="200"></a>
+        <a href="https://opstool.readthedocs.io/en/latest/examples/pre/read_gmsh2.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/XBVvRcGnePsJK8A.png" height="200"></a>
    - *Unit System Management*: Ensure consistency with automatic unit conversions.
    - *Mass Generation*: Automate lumped mass calculations.
 2. **Postprocessing Capabilities**:
    - Easy retrieval and interpretation of analysis results using [xarray](https://docs.xarray.dev/en/stable/index.html#).
-     - <a href="https://sm.ms/image/Q3OV9FLR5oGPMdn" target="_blank"><img src="https://s2.loli.net/2025/02/09/Q3OV9FLR5oGPMdn.png" height="160"></a>
-       <a href="https://sm.ms/image/HzkTF7xdav6eLOt" target="_blank"><img src="https://s2.loli.net/2025/02/09/HzkTF7xdav6eLOt.gif" height="200"></a>
+     - <a href="https://opstool.readthedocs.io/en/latest/src/post/index.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/Q3OV9FLR5oGPMdn.png" height="160"></a>
+       <a href="https://opstool.readthedocs.io/en/latest/examples/post/excavation/test_excavation.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/HzkTF7xdav6eLOt.gif" height="200"></a>
 3. **Visualization**:
    - Powered by [Pyvista](https://docs.pyvista.org/) (VTK-based) and [Plotly](https://plotly.com/python/) (web-based).
    - Nearly identical APIs for flexible visualization of model geometry, modal analysis, and simulation results.
    - Supports most common OpenSees elements.
-   - <a href="https://sm.ms/image/HrzPk1cqSJyxTlY" target="_blank"><img src="https://s2.loli.net/2025/02/09/HrzPk1cqSJyxTlY.png" height="160"></a>
-     <a href="https://sm.ms/image/gxy8LZPkAwa3QEI" target="_blank"><img src="https://s2.loli.net/2025/02/09/gxy8LZPkAwa3QEI.png" height="160"></a>
-     <a href="https://sm.ms/image/LCqVG9Df7RmHou6" target="_blank"><img src="https://s2.loli.net/2025/02/09/LCqVG9Df7RmHou6.png" height="160"></a>
-     <a href="https://sm.ms/image/el21xbpcChVaXNB" target="_blank"><img src="https://s2.loli.net/2025/02/09/el21xbpcChVaXNB.png" height="200"></a>
-     <a href="https://sm.ms/image/lcw5rXuaAKHCB3g" target="_blank"><img src="https://s2.loli.net/2025/02/09/lcw5rXuaAKHCB3g.png" height="200"></a>
-     <a href="https://sm.ms/image/Rp2icyNbFgZOa6Y" target="_blank"><img src="https://s2.loli.net/2025/02/09/Rp2icyNbFgZOa6Y.png" height="200"></a>
+   - <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_model_plotly.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/HrzPk1cqSJyxTlY.png" height="160"></a>
+     <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_eigen_plotly.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/gxy8LZPkAwa3QEI.png" height="160"></a>
+     <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_nodal_resp_plotly.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/LCqVG9Df7RmHou6.png" height="160"></a>
+     <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_brick_resp_plotly.html" target="_blank"><img src="https://s2.loli.net/2025/07/12/raBmf6uP2RdKE73.png" ></a>
+     <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_shell_resp_plotly.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/lcw5rXuaAKHCB3g.png" height="200"></a>
+     <a href="https://opstool.readthedocs.io/en/latest/src/vis/plot_truss_resp_pyvista.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/Rp2icyNbFgZOa6Y.png" height="200"></a>
 4. **Intelligent Analysis**:
    - Features like automatic step size adjustment and algorithm switching to optimize simulation workflows.
+   See [Smart Analysis](https://opstool.readthedocs.io/en/latest/src/analysis/smart_analysis.html).
    - Moment-Curvature Analysis: Generate moment-curvature curves for various sections.
-     - <a href="https://sm.ms/image/mlNHEbfuoIzehri" target="_blank"><img src="https://s2.loli.net/2025/02/09/mlNHEbfuoIzehri.png" height="200"></a>
-       <a href="https://sm.ms/image/9MFf4JQrZVpv6bi" target="_blank"><img src="https://s2.loli.net/2025/02/09/9MFf4JQrZVpv6bi.png" height="200"></a>
+     - <a href="https://opstool.readthedocs.io/en/latest/src/analysis/mc_analysis.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/mlNHEbfuoIzehri.png" height="200"></a>
+       <a href="https://opstool.readthedocs.io/en/latest/src/analysis/mc_analysis.html" target="_blank"><img src="https://s2.loli.net/2025/02/09/9MFf4JQrZVpv6bi.png" height="200"></a>
 
 ## Why Choose opstool?
 

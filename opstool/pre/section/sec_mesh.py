@@ -559,6 +559,18 @@ class FiberSecMesh:
         self.section_geom = geom_obj
         self.section_mesh_sizes = mesh_sizes
 
+    def get_section_geometry(self):
+        """Return the section geometry.
+
+        Returns
+        -------
+        section_geom: `Geometry <https://sectionproperties.readthedocs.io/en/stable/user_guide/geometry.html>`_ or `CompoundGeometry <https://sectionproperties.readthedocs.io/en/stable/user_guide/geometry.html>`_
+            The section geometry object.
+        """
+        if self.section_geom is None:
+            self._to_geometry()
+        return self.section_geom
+
     def _to_mesh_section(self):
         if self.section_geom is None:
             self._to_geometry()
@@ -1611,9 +1623,9 @@ class FiberSecMesh:
 
         names = self.fiber_centers_map.keys()
         if output_path.endswith(".tcl"):
-            self._to_tcl(output_path, names, secTag, GJ, fmt=fmt)
+            self._to_tcl(output_path, names, secTag, GJ, fmt=fmt, is_thermal=is_thermal)
         elif output_path.endswith(".py"):
-            self._to_py(output_path, names, secTag, GJ, fmt=fmt)
+            self._to_py(output_path, names, secTag, GJ, fmt=fmt, is_thermal=is_thermal)
         else:
             raise ValueError("output_path must endwith .tcl or .py!")  # noqa: TRY003
         txt = get_random_color_rich(output_path)
@@ -1690,9 +1702,10 @@ class FiberSecMesh:
         ax : matplotlib.axes.Axes, optional
             The axes to plot the section mesh.
 
-        Returns
+        returns
         --------
-        None
+        ax : matplotlib.axes.Axes
+            The axes with the section mesh plotted.
         """
 
         # self.section.display_mesh_info()
@@ -1709,7 +1722,7 @@ class FiberSecMesh:
                 aspect_ratio = 0.333
             if aspect_ratio >= 3:
                 aspect_ratio = 3
-        self._plot_mpl(fill, aspect_ratio, show_legend=show_legend, ax=ax)
+        return self._plot_mpl(fill, aspect_ratio, show_legend=show_legend, ax=ax)
 
     def _plot_mpl(self, fill, aspect_ratio, show_legend: bool = True, ax=None):
         # matplotlib plot
@@ -1787,6 +1800,7 @@ class FiberSecMesh:
         ax.autoscale()
         plt.tight_layout()
         # plt.show()
+        return ax
 
 
 def sec_rotation(x, y, theta, xo=0, yo=0):

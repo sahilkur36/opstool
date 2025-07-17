@@ -58,50 +58,54 @@ def vis_fiber_sec_real(
     if aspect_ratio >= 3:
         aspect_ratio = 3
     figsize = (8, 8) if aspect_ratio < 1 else (6, 6 * aspect_ratio)
+    
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
+        with plt.style.context("fivethirtyeight"):
+            fig, ax = plt.subplots(figsize=figsize)
 
-    plt.style.use("fivethirtyeight")
 
-    patches = [plt.Circle((yloc, zloc), np.sqrt(area / np.pi)) for yloc, zloc, area in zip(ylocs, zlocs, areas)]
-    if show_matTag:
-        for yloc, zloc, mat in zip(ylocs, zlocs, mats):
-            ax.text(
-                yloc,
-                zloc,
-                f"{mat}",
-                ha="center",
-                va="center",
-                fontsize=12,
-            )
-    coll = PatchCollection(patches, alpha=0.75)
-    if color is None:
-        colors = (ylocs - ymean) ** 2 + (zlocs - zmean) ** 2
-        coll.set_array(colors)
-    else:
-        coll.set_color(color)
-    ax.add_collection(coll)
+    with plt.style.context("fivethirtyeight"):
+        patches = [plt.Circle((yloc, zloc), np.sqrt(area / np.pi)) for yloc, zloc, area in zip(ylocs, zlocs, areas)]
+        if show_matTag:
+            for yloc, zloc, mat in zip(ylocs, zlocs, mats):
+                ax.text(
+                    yloc,
+                    zloc,
+                    f"{mat}",
+                    ha="center",
+                    va="center",
+                    fontsize=12,
+                )
+        coll = PatchCollection(patches, alpha=0.75)
+        if color is None:
+            colors = (ylocs - ymean) ** 2 + (zlocs - zmean) ** 2
+            coll.set_array(colors)
+        else:
+            coll.set_color(color)
+        ax.add_collection(coll)
 
-    if highlight_matTag is not None:
-        highlight_matTag = np.atleast_1d(highlight_matTag)
-        highlight_color = np.atleast_1d(highlight_color)
-        for mtag, color in zip(highlight_matTag, highlight_color):
-            idx = np.argwhere(np.abs(mats - mtag) < 1e-6)
-            rebar_ys = ylocs[idx]
-            rebar_zs = zlocs[idx]
-            rebar_areas = areas[idx]
-            patches_rebar = [
-                plt.Circle((yloc, zloc), np.sqrt(area / np.pi))
-                for yloc, zloc, area in zip(rebar_ys, rebar_zs, rebar_areas)
-            ]
-            coll_rebar = PatchCollection(patches_rebar, color=color, alpha=1)
-            ax.add_collection(coll_rebar)
-    if aspect_ratio == 1:
-        ax.set_aspect("equal")
-    ax.set_xlim(ymin * 1.5, ymax * 1.5)
-    ax.set_ylim(zmin * 1.5, zmax * 1.5)
-    ax.set_xlabel("y", fontsize=20)
-    ax.set_ylabel("z", fontsize=20)
-    ax.autoscale()
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+        if highlight_matTag is not None:
+            highlight_matTag = np.atleast_1d(highlight_matTag)
+            highlight_color = np.atleast_1d(highlight_color)
+            for mtag, color in zip(highlight_matTag, highlight_color):
+                idx = np.argwhere(np.abs(mats - mtag) < 1e-6)
+                rebar_ys = ylocs[idx]
+                rebar_zs = zlocs[idx]
+                rebar_areas = areas[idx]
+                patches_rebar = [
+                    plt.Circle((yloc, zloc), np.sqrt(area / np.pi))
+                    for yloc, zloc, area in zip(rebar_ys, rebar_zs, rebar_areas)
+                ]
+                coll_rebar = PatchCollection(patches_rebar, color=color, alpha=1)
+                ax.add_collection(coll_rebar)
+        
+        if aspect_ratio == 1:
+            ax.set_aspect("equal")
+        ax.set_xlim(ymin * 1.5, ymax * 1.5)
+        ax.set_ylim(zmin * 1.5, zmax * 1.5)
+        ax.set_xlabel("y", fontsize=20)
+        ax.set_ylabel("z", fontsize=20)
+        ax.autoscale()
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+

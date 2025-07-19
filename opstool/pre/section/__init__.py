@@ -25,14 +25,14 @@ __all__ = [
     "create_patch_from_dxf",
     "create_polygon_patch",
     "create_polygon_points",
-    "fiber",
-    "layer",
     "line_offset",
     "offset",
-    "patch",
-    "plot_fiber_sec_cmds",
     "poly_offset",
-    "section",
     "set_patch_material",
-    "vis_fiber_sec_real",
 ]
+
+__all__ += ["fiber", "layer", "patch", "section"]
+
+__all__ += ["plot_fiber_sec_cmds"]
+
+__all__ += ["vis_fiber_sec_real"]

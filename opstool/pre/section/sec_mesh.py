@@ -434,11 +434,21 @@ class FiberSecMesh:
             cx, cy = rot_point
         self.section_geom = self.section_geom.rotate_section(angle=-angle, rot_point=(cx, cy), use_radians=False)
 
+        # update all geometries in the group
+        for name, geom in self.geom_group_map.items():
+            geom = geom.rotate_section(angle=-angle, rot_point=(cx, cy), use_radians=False)
+            self.geom_group_map[name] = geom
+
     def _centering_section_geometry(self):
         if self.section_geom is None:
             self._to_geometry()
         cx, cy = self.section_geom.calculate_centroid()
         self.section_geom = self.section_geom.shift_section(x_offset=-cx, y_offset=-cy)
+
+        # update all geometries in the group
+        for name, geom in self.geom_group_map.items():
+            geom = geom.shift_section(x_offset=-cx, y_offset=-cy)
+            self.geom_group_map[name] = geom
 
     def set_mesh_size(self, mesh_size: Union[dict[str, float], list[float], tuple[float], float]):
         """Assign the mesh size dict for each mesh.
@@ -524,40 +534,51 @@ class FiberSecMesh:
                 self.color_map[name] = colors
         return self
 
+    @staticmethod
+    def _set_geom_material(geom: Geometry, name: str = "default"):
+        """Set the material for a Geometry object."""
+        if geom.material is None:
+            geom.material = DEFAULT_MATERIAL
+        elif geom.material != DEFAULT_MATERIAL:
+            geom.material = create_material(
+                name=name,
+                elastic_modulus=geom.material.elastic_modulus,
+                poissons_ratio=geom.material.poissons_ratio,
+                yield_strength=geom.material.yield_strength,
+                density=geom.material.density,
+                color=geom.material.color,
+            )
+        return geom
+
     def _to_geometry(self):
-        geoms, mesh_sizes = [], []
+        all_geoms = []
         for name, geom in self.geom_group_map.items():
             if isinstance(geom, CompoundGeometry):
+                geoms = []
                 for geomi in geom.geoms:
+                    geomi = self._set_geom_material(geomi, name)
                     geoms.append(geomi)
+                    all_geoms.append(geomi)
                     self.geom_names.append(name)
+                self.geom_group_map[name] = CompoundGeometry(geoms)
             elif isinstance(geom, Geometry):
-                geoms.append(geom)
+                geom = self._set_geom_material(geom, name)
+                all_geoms.append(geom)
                 self.geom_names.append(name)
-        for i in range(len(geoms)):
-            geom = geoms[i]
-            name = self.geom_names[i]
-            if geom.material is None:
-                geom.material = DEFAULT_MATERIAL
-            elif geom.material != DEFAULT_MATERIAL:
-                geom.material = create_material(
-                    name=name,
-                    elastic_modulus=geom.material.elastic_modulus,
-                    poissons_ratio=geom.material.poissons_ratio,
-                    yield_strength=geom.material.yield_strength,
-                    density=geom.material.density,
-                    color=geom.material.color,
-                )
-            geoms[i] = geom
-            mesh_sizes.append(0.5 * self.mesh_size_map[name] ** 2)
+                self.geom_group_map[name] = geom
 
-        if len(geoms) == 1:
-            geom_obj = geoms[0]
-            mesh_sizes = mesh_sizes[0]
+        all_mesh_sizes = []
+        for i in range(len(all_geoms)):
+            name = self.geom_names[i]
+            all_mesh_sizes.append(0.5 * self.mesh_size_map[name] ** 2)
+
+        if len(all_geoms) == 1:
+            geom_obj = all_geoms[0]
+            all_mesh_sizes = all_mesh_sizes[0]
         else:
-            geom_obj = CompoundGeometry(geoms)
+            geom_obj = CompoundGeometry(all_geoms)
         self.section_geom = geom_obj
-        self.section_mesh_sizes = mesh_sizes
+        self.section_mesh_sizes = all_mesh_sizes
 
     def get_section_geometry(self):
         """Return the section geometry.
@@ -1454,10 +1475,6 @@ class FiberSecMesh:
         # move rebars
         for i in range(len(self.rebar_data)):
             self.rebar_data[i]["rebar_xy"] -= self.centroid
-        # move geoms
-        for name, geom in self.geom_group_map.items():
-            new_geom = geom.shift_section(-self.centroid[0], -self.centroid[1])
-            self.geom_group_map[name] = new_geom
         self._centering_section_geometry()
         self.is_centring = True
         self.centroid = np.array([0.0, 0.0])

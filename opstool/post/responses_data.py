@@ -112,12 +112,12 @@ class CreateODB:
             Whether to compute mechanical measures for ``solid and planar elements``,
             including principal stresses, principal strains, von Mises stresses, etc.
         * project_gauss_to_nodes: Optional[str], default: "copy"
-            Method to project Gauss point responses to nodes.
-            Options are:
-            - "copy": Copy Gauss point responses to nodes, that is, the node's response comes from the nearest Gaussian point.
-            - "average": Average Gauss point responses to nodes by integrate weight.
-            - "extrapolate": Extrapolate Gauss point responses to nodes by element shape function.
-            - ``None`` or ``False``: Do not project Gauss point responses to nodes.
+            Method to project Gauss point responses to nodes. Options are:
+
+            * "copy": Copy Gauss point responses to nodes, that is, the node's response comes from the nearest Gaussian point.
+            * "average": Average Gauss point responses to nodes by integrate weight.
+            * "extrapolate": Extrapolate Gauss point responses to nodes by element shape function.
+            * ``None`` or ``False``: Do not project Gauss point responses to nodes.
 
         * dtype: dict, default: dict(int=np.int32, float=np.float32)
             Set integer and floating point precision types.
@@ -486,11 +486,7 @@ class CreateODB:
         save_model_data(odb_tag=self._odb_tag)
 
 
-def loadODB(
-    obd_tag,
-    resp_type: str = "Nodal",
-    verbose: bool = True,
-):
+def loadODB(obd_tag, resp_type: str = "Nodal", verbose: bool = True):
     """Load saved response data.
 
     Returns
@@ -504,8 +500,8 @@ def loadODB(
 
     filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{obd_tag}.nc"
     with xr.open_datatree(filename, engine="netcdf4").load() as dt:
-        color = get_random_color()
         if verbose:
+            color = get_random_color()
             CONSOLE.print(f"{PKG_PREFIX} Loading response data from [bold {color}]{filename}[/] ...")
         model_info_steps, model_update = ModelInfoStepData.read_file(dt, unit_factors=_POST_ARGS.unit_factors)
         if resp_type.lower() == "nodal":
@@ -547,6 +543,7 @@ def get_model_data(odb_tag: Optional[int] = None, data_type: str = "Nodal", from
 
         ... Note::
             For element data, the cells represent the index of the nodes in "Nodal" data.
+            You can use the ``.isel`` method of xarray to select node information by cell index.
 
     from_responses: bool, default: False
         Whether to read data from response data.
@@ -621,7 +618,7 @@ def get_nodal_responses(
 
         .. Note::
             If the nodes include fluid pressure dof,
-            such as those used for ...UP elements, the pore pressure should be extracted using ``resp_type="vel"``,
+            such as those used for ``**UP`` elements, the pore pressure should be extracted using ``resp_type="vel"``,
             and the value is placed in the degree of freedom ``RZ``.
 
     node_tags: Union[list, tuple, int], default: None

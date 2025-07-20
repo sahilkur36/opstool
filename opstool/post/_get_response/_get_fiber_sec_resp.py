@@ -92,7 +92,10 @@ class FiberSecRespStepData(ResponseBase):
                 ys.append(fiber_data[:, 0])
                 zs.append(fiber_data[:, 1])
                 areas.append(fiber_data[:, 2])
-                mats.append(fiber_data[:, 3])
+                if fiber_data.shape[1] == 6:
+                    mats.append(fiber_data[:, 3])
+                else:
+                    mats.append(np.full(fiber_data.shape[0], np.nan))
             all_ys.append(_expand_to_uniform_array(ys))
             all_zs.append(_expand_to_uniform_array(zs))
             all_areas.append(_expand_to_uniform_array(areas))
@@ -272,9 +275,21 @@ def _get_fiber_sec_data(ele_tag: int, sec_num: int = 1, dtype: Optional[dict] = 
         )
         sec_num = len(sec_loc)
     ele_tag = int(ele_tag)
+    # ------------------------------------------------------------------
     fiber_data = ops.eleResponse(ele_tag, "section", f"{sec_num}", "fiberData2")
     if len(fiber_data) == 0:
         fiber_data = ops.eleResponse(ele_tag, "section", "fiberData2")
-    # From column 1 to 6: "yCoord", "zCoord", "area", 'mat', "stress", "strain"
-    fiber_data = np.reshape(fiber_data, (-1, 6))  # to six columns
-    return fiber_data.astype(dtype["float"])
+    if len(fiber_data) > 0:
+        # From column 1 to 6: "yCoord", "zCoord", "area", 'mat', "stress", "strain"
+        fiber_data = np.reshape(fiber_data, (-1, 6))  # to six columns
+        return fiber_data.astype(dtype["float"])
+    # ------------------------------------------------------------------
+    fiber_data = ops.eleResponse(ele_tag, "section", f"{sec_num}", "fiberData")
+    if len(fiber_data) == 0:
+        fiber_data = ops.eleResponse(ele_tag, "section", "fiberData")
+    if len(fiber_data) > 0:
+        # From column 1 to 5: "yCoord", "zCoord", "area", "stress", "strain"
+        fiber_data = np.reshape(fiber_data, (-1, 5))  # to five columns
+        return fiber_data.astype(dtype["float"])
+    # ------------------------------------------------------------------
+    return np.array([[np.nan] * 6])

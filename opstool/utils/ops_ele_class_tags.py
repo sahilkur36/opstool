@@ -246,20 +246,20 @@ ELE_TYPE_TAGS = {
     257: "E_SFI",
     258: "TripleFrictionPendulumX",
     99990: "ExternalElement",
-    259259: "ELE_TAG_E_SFI_MVLEM_3D",
-    259: "ELE_TAG_PML2D_3",
-    260: "ELE_TAG_PML2D_5",
-    261: "ELE_TAG_PML2D_12",
-    262: "ELE_TAG_PML2DVISCOUS",
+    259259: "E_SFI_MVLEM_3D",
+    259: "PML2D_3",
+    260: "PML2D_5",
+    261: "PML2D_12",
+    262: "PML2DVISCOUS",
     # Sensitivity element
-    100000011: "ELE_TAG_FourNodeQuadWithSensitivity",
-    1984587234: "ELE_TAG_BbarBrickWithSensitivity",
-    102030: "ELE_TAG_DispBeamColumn2dWithSensitivity",
-    1110000: "ELE_TAG_DispBeamColumn3dWithSensitivity",
-    100003: "ELE_TAG_VS3D4QuadWithSensitivity",
-    100009: "ELE_TAG_AV3D4QuadWithSensitivity",
-    100001: "ELE_TAG_AC3D8HexWithSensitivity",
-    100002: "ELE_TAG_ASI3D8QuadWithSensitivity",
+    100000011: "FourNodeQuadWithSensitivity",
+    1984587234: "BbarBrickWithSensitivity",
+    102030: "DispBeamColumn2dWithSensitivity",
+    1110000: "DispBeamColumn3dWithSensitivity",
+    100003: "VS3D4QuadWithSensitivity",
+    100009: "AV3D4QuadWithSensitivity",
+    100001: "AC3D8HexWithSensitivity",
+    100002: "ASI3D8QuadWithSensitivity",
 }
 # ELE_TAG_TYPE = {value: key for key, value in ELE_TYPE_TAGS.items()}
 
@@ -278,7 +278,7 @@ ELE_TAG_Truss = [
     155,  # N4BiaxialTrus
     169,  # CatenaryCable
     218,  # InertiaTruss
-]  # 169 is CatenaryCable
+]
 ELE_TAG_Cable = [169]
 ELE_TAG_Link = [
     19,
@@ -420,6 +420,12 @@ ELE_TAG_Plane = [
     100003,  # ELE_TAG_VS3D4QuadWithSensitivity
     100009,  # ELE_TAG_AV3D4QuadWithSensitivity
     100002,  # ELE_TAG_ASI3D8QuadWithSensitivity
+    133,  # PFEMElement2D
+    142,  # PFEMElement2DCompressible
+    143,  # PFEMElement2DBubble
+    144,  # PFEMElement2Dmini
+    164,  # PFEMElement2DFIC
+    187,  # PFEMElement2DQuasi
 ]
 ELE_TAG_SURFACE_LOAD = [116, 180]
 ELE_TAG_Shell = [

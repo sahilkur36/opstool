@@ -165,97 +165,127 @@ class NodalRespStepData(ResponseBase):
                 return ds[resp_type]
 
 
+def handle_1d(disp, vel, accel):
+    return (
+        [*disp, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [*vel, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [*accel, 0.0, 0.0, 0.0, 0.0, 0.0],
+    )
+
+
+def handle_2d(disp, vel, accel):
+    if len(disp) == 1:
+        return handle_1d(disp, vel, accel)
+    elif len(disp) == 2:
+        return (
+            [*disp, 0.0, 0.0, 0.0, 0.0],
+            [*vel, 0.0, 0.0, 0.0, 0.0],
+            [*accel, 0.0, 0.0, 0.0, 0.0],
+        )
+    elif len(disp) >= 3:
+        # Assume (ux, uy, rz)
+        return (
+            [disp[0], disp[1], 0.0, 0.0, 0.0, disp[2]],
+            [vel[0], vel[1], 0.0, 0.0, 0.0, vel[2]],
+            [accel[0], accel[1], 0.0, 0.0, 0.0, accel[2]],
+        )
+
+
+def handle_3d(disp, vel, accel):
+    if len(disp) == 3:
+        return (
+            [*disp, 0.0, 0.0, 0.0],
+            [*vel, 0.0, 0.0, 0.0],
+            [*accel, 0.0, 0.0, 0.0],
+        )
+    elif len(disp) == 4:
+        return (
+            [disp[0], disp[1], disp[2], 0.0, 0.0, disp[3]],
+            [vel[0], vel[1], vel[2], 0.0, 0.0, vel[3]],
+            [accel[0], accel[1], accel[2], 0.0, 0.0, accel[3]],
+        )
+    elif len(disp) < 6:
+        pad_len = 6 - len(disp)
+        return (
+            disp + [0.0] * pad_len,
+            vel + [0.0] * pad_len,
+            accel + [0.0] * pad_len,
+        )
+    else:
+        return (
+            disp[:6],
+            vel[:6],
+            accel[:6],
+        )
+
+
 def _get_nodal_resp(node_tags, dtype: dict):
-    node_disp = []  # 6 data each row, Ux, Uy, Uz, Rx, Ry, Rz
-    node_vel = []  # 6 data each row, Ux, Uy, Uz, Rx, Ry, Rz
-    node_accel = []  # 6 data each row, Ux, Uy, Uz, Rx, Ry, Rz
-    node_pressure = []  # 1 data each row, P
-    all_node_tags = ops.getNodeTags()
-    for _i, tag in enumerate(node_tags):
-        tag = int(tag)
+    node_disp, node_vel, node_accel, node_pressure = [], [], [], []
+    all_node_tags = set(ops.getNodeTags())
+
+    for tag in map(int, node_tags):
         if tag in all_node_tags:
             coord = ops.nodeCoord(tag)
+            ndim = len(coord)
             disp = ops.nodeDisp(tag)
             vel = ops.nodeVel(tag)
             accel = ops.nodeAccel(tag)
-            if len(coord) == 1:
-                disp.extend([0, 0, 0, 0, 0])
-                vel.extend([0, 0, 0, 0, 0])
-                accel.extend([0, 0, 0, 0, 0])
-            elif len(coord) == 2:
-                if len(disp) == 2:  # 2 ndim 2 dof
-                    disp.extend([0, 0, 0, 0])
-                    vel.extend([0, 0, 0, 0])
-                    accel.extend([0, 0, 0, 0])
-                elif len(disp) >= 3:  # 2 ndim 3 dof
-                    disp = [disp[0], disp[1], 0.0, 0.0, 0.0, disp[2]]
-                    vel = [vel[0], vel[1], 0.0, 0.0, 0.0, vel[2]]
-                    accel = [accel[0], accel[1], 0.0, 0.0, 0.0, accel[2]]
+
+            if ndim == 1:
+                d, v, a = handle_1d(disp, vel, accel)
+            elif ndim == 2:
+                d, v, a = handle_2d(disp, vel, accel)
             else:
-                if len(disp) == 3:  # 3 ndim 3 dof
-                    disp.extend([0, 0, 0])
-                    vel.extend([0, 0, 0])
-                    accel.extend([0, 0, 0])
-                elif len(disp) == 4:  # 3 ndim 4 dof
-                    disp = [disp[0], disp[1], disp[2], 0.0, 0.0, disp[3]]
-                    vel = [vel[0], vel[1], vel[2], 0.0, 0.0, vel[3]]
-                    accel = [accel[0], accel[1], accel[2], 0.0, 0.0, accel[3]]
-                elif len(disp) < 6:  # 3 ndim 6 dof
-                    disp.extend([0] * (6 - len(disp)))
-                    vel.extend([0] * (6 - len(vel)))
-                    accel.extend([0] * (6 - len(accel)))
-                elif len(disp) > 6:
-                    disp = disp[:6]
-                    vel = vel[:6]
-                    accel = accel[:6]
+                d, v, a = handle_3d(disp, vel, accel)
         else:
-            disp = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
-            vel = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
-            accel = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
-        node_disp.append(disp)
-        node_vel.append(vel)
-        node_accel.append(accel)
+            d = v = a = [np.nan] * 6
+
+        node_disp.append(d)
+        node_vel.append(v)
+        node_accel.append(a)
         node_pressure.append(ops.nodePressure(tag))
-    node_disp = np.array(node_disp, dtype=dtype["float"])
-    node_vel = np.array(node_vel, dtype=dtype["float"])
-    node_accel = np.array(node_accel, dtype=dtype["float"])
-    node_pressure = np.array(node_pressure, dtype=dtype["float"])
-    return node_disp, node_vel, node_accel, node_pressure
+
+    return (
+        np.array(node_disp, dtype=dtype["float"]),
+        np.array(node_vel, dtype=dtype["float"]),
+        np.array(node_accel, dtype=dtype["float"]),
+        np.array(node_pressure, dtype=dtype["float"]),
+    )
+
+
+def _get_react(tags):
+    forces = []  # 6 data each row, Ux, Uy, Uz, Rx, Ry, Rz
+    for tag in tags:
+        tag = int(tag)
+        if tag in ops.getNodeTags():
+            coord = ops.nodeCoord(tag)
+            fo = ops.nodeReaction(tag)
+            ndim, ndf = len(coord), len(fo)
+            if ndim == 1 or (ndim == 2 and ndf == 1):
+                fo.extend([0.0, 0.0, 0.0, 0.0, 0.0])
+            elif ndim == 2 and ndf == 2:
+                fo.extend([0.0, 0.0, 0.0, 0.0])
+            elif ndim == 2 and ndf >= 3:
+                fo = [fo[0], fo[1], 0.0, 0.0, 0.0, fo[2]]
+            elif ndim == 3 and ndf == 3:
+                fo.extend([0.0, 0.0, 0.0])
+            elif ndim == 3 and ndf < 6:  # 3 ndim 6 dof
+                fo.extend([0] * (6 - len(fo)))
+            elif ndim == 3 and ndf > 6:
+                fo = fo[:6]
+        else:
+            fo = [np.nan] * 6
+        forces.append(fo)
+    return forces
 
 
 def _get_nodal_react(node_tags, dtype: dict):
-    def get_react(tags):
-        forces = []  # 6 data each row, Ux, Uy, Uz, Rx, Ry, Rz
-        for tag in tags:
-            tag = int(tag)
-            if tag in ops.getNodeTags():
-                coord = ops.nodeCoord(tag)
-                fo = ops.nodeReaction(tag)
-                if len(coord) == 1:
-                    fo.extend([0.0, 0.0, 0.0, 0.0, 0.0])
-                elif len(coord) == 2:
-                    if len(fo) == 2:
-                        fo.extend([0.0, 0.0, 0.0, 0.0])
-                    elif len(fo) >= 3:
-                        fo = [fo[0], fo[1], 0.0, 0.0, 0.0, fo[2]]
-                else:
-                    if len(fo) == 3:
-                        fo.extend([0.0, 0.0, 0.0])
-                    elif len(fo) < 6:  # 3 ndim 6 dof
-                        fo.extend([0] * (6 - len(fo)))
-                    elif len(fo) > 6:
-                        fo = fo[:6]
-            else:
-                fo = [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
-            forces.append(fo)
-        return forces
-
     ops.reactions()
-    reacts = np.array(get_react(node_tags), dtype=dtype["float"])
+    reacts = np.array(_get_react(node_tags), dtype=dtype["float"])
     # rayleighForces
     ops.reactions("-rayleigh")
-    rayleigh_forces = np.array(get_react(node_tags), dtype=dtype["float"])
+    rayleigh_forces = np.array(_get_react(node_tags), dtype=dtype["float"])
     # Include Inertia
     ops.reactions("-dynamic")
-    reacts_inertia = np.array(get_react(node_tags), dtype=dtype["float"])
+    reacts_inertia = np.array(_get_react(node_tags), dtype=dtype["float"])
     return reacts, reacts_inertia, rayleigh_forces

@@ -331,7 +331,7 @@ class GetFEMData(FEMData):
             return xr.DataArray(self.ele_centers, name="eleCenters")
 
     def get_ele_data(self):
-        self._make_ele_info()
+        self._make_ele_info()  # This function is called to gather all element data
         # -----------------------------------------
         truss_data = self.get_truss_data()
         beam_data = self.get_beams_data()
@@ -344,7 +344,7 @@ class GetFEMData(FEMData):
         contact_data = self.get_contact_data()
         ele_centers = self.get_ele_centers_data()
         # --------------------------------------------------------------
-        all_eles = {}  # all elements data, key is the element type
+        all_eles = {}  # all elements data, key is the element type, such as "ZeroLength"
         for key in self.ELE_CELLS_VTK:
             cells_type = np.array(self.ELE_CELLS_TYPE_VTK[key])
             cells_type = np.reshape(cells_type, (-1, 1))
@@ -352,10 +352,7 @@ class GetFEMData(FEMData):
             names = ["numNodes"] + [f"node{i + 1}" for i in range(data.shape[1] - 2)] + ["cellType"]
             all_eles[key] = xr.DataArray(
                 data,
-                coords={
-                    "info": names,
-                    "eleTags": self.ELE_CELLS_TAGS[key],
-                },
+                coords={"info": names, "eleTags": self.ELE_CELLS_TAGS[key]},
                 dims=["eleTags", "info"],
                 name=key,
             )

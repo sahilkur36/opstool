@@ -33,7 +33,7 @@ class FEMData:
         self.MODEL_INFO = {}
         self.ELE_CELLS = {}
         self.ELE_CELLS_VTK = defaultdict(list)  # key: EleClassName, value: Element cells in VTK
-        self.ELE_CELLS_TYPE_VTK = defaultdict(list)  # key: EleClassName, value: Element cell type in VTK
+        self.ELE_CELLS_TYPE_VTK = defaultdict(list)  # key: EleClassName, value: Element cell type (int) in VTK
         self.ELE_CELLS_TAGS = defaultdict(list)  # key: EleClassName, value: Element tags
         # ------------------------------------------------------------------------
         # --------------------------nodal info------------------------------------
@@ -245,9 +245,9 @@ class FEMData:
             yaxis = ops.eleResponse(ele_tag, "ylocal")
         if not zaxis:
             zaxis = ops.eleResponse(ele_tag, "zlocal")
-        xaxis = np.array(xaxis) / np.linalg.norm(xaxis) if xaxis else np.array([0.0, 0.0, 0.0])
-        yaxis = np.array(yaxis) / np.linalg.norm(yaxis) if yaxis else np.array([0.0, 0.0, 0.0])
-        zaxis = np.array(zaxis) / np.linalg.norm(zaxis) if zaxis else np.array([0.0, 0.0, 0.0])
+        xaxis = np.array(xaxis) / _get_vec_norm(xaxis) if xaxis else np.array([0.0, 0.0, 0.0])
+        yaxis = np.array(yaxis) / _get_vec_norm(yaxis) if yaxis else np.array([0.0, 0.0, 0.0])
+        zaxis = np.array(zaxis) / _get_vec_norm(zaxis) if zaxis else np.array([0.0, 0.0, 0.0])
         return xaxis, yaxis, zaxis
 
     def _make_link_info(self, ele_tag):
@@ -258,7 +258,7 @@ class FEMData:
         self.link_tags.append(ele_tag)
         self.link_cells.append([2, idx_i, idx_j])
         self.link_centers.append((coordi + coordj) / 2)
-        self.link_lengths.append(np.linalg.norm(coordj - coordi))
+        self.link_lengths.append(_get_vec_norm(coordj - coordi))
         xaxis, yaxis, zaxis = self._get_local_axis(ele_tag)
         self.link_xaxis.append(xaxis)
         self.link_yaxis.append(yaxis)
@@ -365,9 +365,9 @@ class FEMData:
         key = OPS_ELE_CLASSTAG2TYPE[class_tag]
         self.ELE_CELLS_TAGS[key].append(ele_tag)
         #  both len(idxs) in (4, 5) and len(idxs) == 7
-        self.ELE_CELLS_VTK[key].append([4] + idxs[:4])
+        self.ELE_CELLS_VTK[key].append([4, *idxs[:4]])
         self.ELE_CELLS_TYPE_VTK[key].append(PLANE_CELL_TYPE_VTK[4])
-        self.unstru_cells.append([4] + idxs[:4])
+        self.unstru_cells.append([4, *idxs[:4]])
         self.unstru_cells_type.append(PLANE_CELL_TYPE_VTK[4])
         if len(idxs) == 7:  # Joint3D, add a quad
             self.ELE_CELLS_VTK[key].append([4, idxs[4], idxs[1], idxs[5], idxs[3]])
@@ -388,41 +388,47 @@ class FEMData:
     def _make_ele_info(self):
         for ele_tag in ops.getEleTags():
             class_tag = ops.getEleClassTags(ele_tag)
-            if not isinstance(class_tag, int):
-                class_tag = class_tag[0]
+            class_tag = class_tag if isinstance(class_tag, int) else class_tag[0]
+
             num_nodes = len(ops.eleNodes(ele_tag))
+            self._make_all_line_info(ele_tag, class_tag) if num_nodes == 2 else None
+
+            handled = False
+
             if num_nodes == 2:
-                self._make_all_line_info(ele_tag, class_tag)
-                if class_tag in OPS_ELE_TAGS.Truss:
-                    self._make_truss_info(ele_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-                elif class_tag in OPS_ELE_TAGS.Beam:
-                    self._make_beam_info(ele_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-                elif class_tag in OPS_ELE_TAGS.Link:
-                    self._make_link_info(ele_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
+                handled = self._handle_1d_element(ele_tag, class_tag)
             else:
-                if class_tag in OPS_ELE_TAGS.Plane:
-                    self._make_plane_info(ele_tag, class_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-                elif class_tag in OPS_ELE_TAGS.Shell:
-                    self._make_shell_info(ele_tag, class_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-                elif class_tag in OPS_ELE_TAGS.Solid:
-                    self._make_solid_info(ele_tag, class_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-                elif class_tag in OPS_ELE_TAGS.Joint:
-                    self._make_joint_info(ele_tag, class_tag)
-                    self._make_ele_centers(ele_tag, class_tag)
-            if class_tag in OPS_ELE_TAGS.Contact:
+                handled = self._handle_nd_element(ele_tag, class_tag)
+
+            if not handled and class_tag in OPS_ELE_TAGS.Contact:
                 self._make_contact_info(ele_tag, class_tag)
 
-        # reshape, ensure array alignment, starting with the element with the most nodes
-        self.plane_cells = self._reshape_ele_cells(self.plane_cells)
-        self.shell_cells = self._reshape_ele_cells(self.shell_cells)
-        self.brick_cells = self._reshape_ele_cells(self.brick_cells)
-        self.unstru_cells = self._reshape_ele_cells(self.unstru_cells)
+    def _handle_1d_element(self, ele_tag, class_tag):
+        handlers = {
+            OPS_ELE_TAGS.Truss: self._make_truss_info,
+            OPS_ELE_TAGS.Beam: self._make_beam_info,
+            OPS_ELE_TAGS.Link: self._make_link_info,
+        }
+        for tag_group, handler in handlers.items():
+            if class_tag in tag_group:
+                handler(ele_tag)
+                self._make_ele_centers(ele_tag, class_tag)
+                return True
+        return False
+
+    def _handle_nd_element(self, ele_tag, class_tag):
+        handlers = {
+            OPS_ELE_TAGS.Plane: self._make_plane_info,
+            OPS_ELE_TAGS.Shell: self._make_shell_info,
+            OPS_ELE_TAGS.Solid: self._make_solid_info,
+            OPS_ELE_TAGS.Joint: self._make_joint_info,
+        }
+        for tag_group, handler in handlers.items():
+            if class_tag in tag_group:
+                handler(ele_tag, class_tag)
+                self._make_ele_centers(ele_tag, class_tag)
+                return True
+        return False
 
     @staticmethod
     def _reshape_ele_cells(cells):
@@ -431,10 +437,6 @@ class FEMData:
             if len(set(nums)) > 1:
                 max_num = np.max(nums)
                 cells = [cell + [np.nan] * (max_num - len(cell)) for cell in cells]
-            else:
-                cells = cells
-        else:
-            cells = cells
         return cells
 
     def _make_model_info(self):
@@ -509,3 +511,12 @@ class FEMData:
     def get_model_info(self):
         self._make_model_info()
         return self.MODEL_INFO, self.ELE_CELLS
+
+
+def _get_vec_norm(vec):
+    """
+    Calculate the norm of a vector.
+    :param vec: A vector (list or numpy array).
+    :return: The norm of the vector.
+    """
+    return np.sqrt(np.sum(np.array(vec) ** 2)) if isinstance(vec, (list, np.ndarray)) else 0.0

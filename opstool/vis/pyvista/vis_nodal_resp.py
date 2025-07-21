@@ -368,7 +368,7 @@ def plot_nodal_responses(
         .. Note::
             If the nodes include fluid pressure dof,
             such as those used for ...UP elements, the pore pressure should be extracted using ``resp_type="vel"``,
-            and ``resp_dof="UZ"``.
+            and ``resp_dof="RZ"``.
 
     unit_symbol: str, default: None
         Unit symbol to be displayed in the plot.

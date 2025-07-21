@@ -20,6 +20,7 @@ LINE_CELL_TYPE_VTK = {2: 3, 3: 21}  # KEY : NUM.VERTEX; VALUE: VTK CELL TYPE
 PLANE_CELL_TYPE_VTK = {3: 5, 4: 9, 6: 22, 7: 34, 8: 23, 9: 28}
 SOLID_CELL_TYPE_VTK = {4: 10, 8: 12, 10: 24, 20: 25, 24: 33, 27: 29}
 
+
 INT_TYPE = np.int32
 FLOAT_TYPE = np.float32
 
@@ -391,44 +392,42 @@ class FEMData:
             class_tag = class_tag if isinstance(class_tag, int) else class_tag[0]
 
             num_nodes = len(ops.eleNodes(ele_tag))
-            self._make_all_line_info(ele_tag, class_tag) if num_nodes == 2 else None
 
-            handled = False
-
-            if num_nodes == 2:
-                handled = self._handle_1d_element(ele_tag, class_tag)
-            else:
-                handled = self._handle_nd_element(ele_tag, class_tag)
-
-            if not handled and class_tag in OPS_ELE_TAGS.Contact:
+            if class_tag in OPS_ELE_TAGS.Truss + OPS_ELE_TAGS.Beam + OPS_ELE_TAGS.Link:
+                self._make_all_line_info(ele_tag, class_tag)
+                self._handle_1d_element(ele_tag, class_tag)
+            elif num_nodes == 2:
+                self._make_all_line_info(ele_tag, class_tag)
+                self._make_ele_centers(ele_tag, class_tag)
+            elif class_tag in OPS_ELE_TAGS.Plane + OPS_ELE_TAGS.Shell + OPS_ELE_TAGS.Solid + OPS_ELE_TAGS.Joint:
+                self._handle_nd_element(ele_tag, class_tag)
+            elif class_tag in OPS_ELE_TAGS.Contact:
                 self._make_contact_info(ele_tag, class_tag)
 
     def _handle_1d_element(self, ele_tag, class_tag):
-        handlers = {
-            OPS_ELE_TAGS.Truss: self._make_truss_info,
-            OPS_ELE_TAGS.Beam: self._make_beam_info,
-            OPS_ELE_TAGS.Link: self._make_link_info,
-        }
-        for tag_group, handler in handlers.items():
-            if class_tag in tag_group:
-                handler(ele_tag)
-                self._make_ele_centers(ele_tag, class_tag)
-                return True
-        return False
+        if class_tag in OPS_ELE_TAGS.Truss:
+            self._make_truss_info(ele_tag)
+            self._make_ele_centers(ele_tag, class_tag)
+        elif class_tag in OPS_ELE_TAGS.Beam:
+            self._make_beam_info(ele_tag)
+            self._make_ele_centers(ele_tag, class_tag)
+        elif class_tag in OPS_ELE_TAGS.Link:
+            self._make_link_info(ele_tag)
+            self._make_ele_centers(ele_tag, class_tag)
 
     def _handle_nd_element(self, ele_tag, class_tag):
-        handlers = {
-            OPS_ELE_TAGS.Plane: self._make_plane_info,
-            OPS_ELE_TAGS.Shell: self._make_shell_info,
-            OPS_ELE_TAGS.Solid: self._make_solid_info,
-            OPS_ELE_TAGS.Joint: self._make_joint_info,
-        }
-        for tag_group, handler in handlers.items():
-            if class_tag in tag_group:
-                handler(ele_tag, class_tag)
-                self._make_ele_centers(ele_tag, class_tag)
-                return True
-        return False
+        if class_tag in OPS_ELE_TAGS.Plane:
+            self._make_plane_info(ele_tag, class_tag)
+            self._make_ele_centers(ele_tag, class_tag)
+        elif class_tag in OPS_ELE_TAGS.Shell:
+            self._make_shell_info(ele_tag, class_tag)
+            self._make_ele_centers(ele_tag, class_tag)
+        elif class_tag in OPS_ELE_TAGS.Solid:
+            self._make_solid_info(ele_tag, class_tag)
+            self._make_ele_centers(ele_tag, class_tag)
+        elif class_tag in OPS_ELE_TAGS.Joint:
+            self._make_joint_info(ele_tag, class_tag)
+            self._make_ele_centers(ele_tag, class_tag)
 
     @staticmethod
     def _reshape_ele_cells(cells):

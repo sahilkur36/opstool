@@ -404,6 +404,12 @@ class FEMData:
             elif class_tag in OPS_ELE_TAGS.Contact:
                 self._make_contact_info(ele_tag, class_tag)
 
+        # reshape, ensure array alignment, starting with the element with the most nodes
+        self.plane_cells = self._reshape_ele_cells(self.plane_cells)
+        self.shell_cells = self._reshape_ele_cells(self.shell_cells)
+        self.brick_cells = self._reshape_ele_cells(self.brick_cells)
+        self.unstru_cells = self._reshape_ele_cells(self.unstru_cells)
+
     def _handle_1d_element(self, ele_tag, class_tag):
         if class_tag in OPS_ELE_TAGS.Truss:
             self._make_truss_info(ele_tag)

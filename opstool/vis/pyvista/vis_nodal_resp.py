@@ -63,6 +63,40 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             scalars = node_resp if node_resp.ndim == 1 else np.linalg.norm(node_resp, axis=1)
         return node_defo_coords, scalars
 
+    def get_dataset(self, step):
+        cmin, cmax, step = self._get_resp_clim_peak(idx=step)
+        if self.resps_norm is not None:
+            scalars = self.resps_norm[step]
+        else:
+            node_resp = np.array(self._get_resp_da(step, self.resp_type, self.component))
+            scalars = node_resp if node_resp.ndim == 1 else np.linalg.norm(node_resp, axis=1)
+        # ----------------------------------
+        pos = np.array(self._get_node_da(step))
+        # -----------------------------------------------------
+        if len(pos) > 0:
+            point_grid = pv.PolyData(pos)
+            point_grid["scalars"] = scalars
+        else:
+            point_grid = pv.PolyData()  # Empty PolyData if no nodes are present
+        # -----------------------------------------------------
+        line_cells, _ = self._get_line_cells(self._get_line_da(step))
+        if len(line_cells) > 0:
+            line_grid = pv.PolyData()
+            line_grid.points = pos
+            line_grid.lines = line_cells
+            line_grid["scalars"] = scalars
+        else:
+            line_grid = pv.PolyData()  # Empty PolyData if no lines are present
+        # -----------------------------------------------------
+        _, unstru_cell_types, unstru_cells = self._get_unstru_cells(self._get_unstru_da(step))
+        if len(unstru_cells) > 0:
+            unstru_grid = pv.UnstructuredGrid(unstru_cells, unstru_cell_types, pos)
+            unstru_grid["scalars"] = scalars
+        else:
+            unstru_grid = pv.UnstructuredGrid()  # Empty UnstructuredGrid if no cells are present
+
+        return point_grid, line_grid, unstru_grid
+
     def _create_mesh(
         self,
         plotter,
@@ -563,3 +597,52 @@ def plot_nodal_responses_animation(
     print(f"Animation has been saved to {savefig}!")
 
     return plotbase._update_plotter(plotter, cpos)
+
+
+def get_nodal_responses_dataset(
+    odb_tag: Union[int, str] = 1,
+    step: Union[int, str] = "absMax",
+    resp_type: str = "disp",
+    resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
+) -> tuple[pv.PolyData, pv.PolyData, pv.UnstructuredGrid]:
+    """Get nodal responses dataset.
+    Scalars are stored in the "scalars" field of the dataset.
+
+    Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
+
+    Parameters
+    ----------
+    odb_tag: Union[int, str], default: 1
+        Tag of output databases (ODB) to be visualized.
+    step: Union[int, str], default: "absMax"
+        If slides = False, this parameter will be used as the step to plot.
+        If str, Optional: [absMax, absMin, Max, Min].
+        If int, this step will be demonstrated (counting from 0).
+    resp_type: str, default: disp
+        Type of response to be visualized.
+        Optional: "disp", "vel", "accel", "reaction", "reactionIncInertia", "rayleighForces", "pressure".
+    resp_dof: str, default: ("UX", "UY", "UZ")
+        Component to be visualized.
+        Optional: "UX", "UY", "UZ", "RX", "RY", "RZ".
+        You can also pass on a list or tuple to display multiple dimensions, for example, ["UX", "UY"],
+        ["UX", "UY", "UZ"], ["RX", "RY", "RZ"], ["RX", "RY"], ["RY", "RZ"], ["RX", "RZ"], and so on.
+
+        .. Note::
+            If the nodes include fluid pressure dof,
+            such as those used for ...UP elements, the pore pressure should be extracted using ``resp_type="vel"``,
+            and ``resp_dof="RZ"``.
+
+    Returns
+    -------
+    point_grid: `pyvista.PolyData <https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata#pyvista.PolyData>`_.
+        Point grid with nodal coordinates and response scalars.
+    line_grid: `pyvista.PolyData <https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata#pyvista.PolyData>`_.
+        Line grid with line cells and response scalars.
+    unstru_grid: `pyvista.UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_.
+        Unstructured grid with unstructured cells and response scalars.
+    """
+    model_info_steps, model_update, node_resp_steps = loadODB(odb_tag, resp_type="Nodal")
+    plotbase = PlotNodalResponse(model_info_steps, node_resp_steps, model_update)
+    plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)
+    point_grid, line_grid, unstru_grid = plotbase.get_dataset(step)
+    return point_grid, line_grid, unstru_grid

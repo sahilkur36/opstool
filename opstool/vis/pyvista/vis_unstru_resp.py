@@ -65,6 +65,14 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         scalars = self.resp_step[step].to_numpy()
         return pos_defo, cells, cell_types, scalars
 
+    def get_dataset(self, step, ele_tags=None):
+        """Get the dataset for the specified step and element tags."""
+        step, clim = self._get_resp_peak(idx=step)
+        pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale=0.0)
+        grid = pv.UnstructuredGrid(cells, cell_types, pos)
+        grid["scalars"] = scalars
+        return grid
+
     def _create_mesh(
         self,
         plotter,
@@ -336,9 +344,6 @@ def plot_unstruct_responses(
 ) -> pv.Plotter:
     """Visualizing unstructured element (Shell, Plane, Brick) Response.
 
-    .. Note::
-        The responses at all Gaussian points are averaged.
-
     Parameters
     ----------
     odb_tag: Union[int, str], default: 1
@@ -521,9 +526,6 @@ def plot_unstruct_responses_animation(
 ) -> pv.Plotter:
     """Unstructured element (Shell, Plane, Brick) response animation.
 
-    .. Note::
-        The responses at all Gaussian points are averaged.
-
     Parameters
     ----------
     odb_tag: Union[int, str], default: 1
@@ -668,3 +670,102 @@ def plot_unstruct_responses_animation(
         plotter.enable_anti_aliasing(PLOT_ARGS.anti_aliasing)
     print(f"Animation has been saved as {savefig}!")
     return plotbase._update_plotter(plotter, cpos)
+
+
+def get_unstruct_responses_dataset(
+    odb_tag: Union[int, str] = 1,
+    ele_type: str = "Shell",
+    ele_tags: Optional[Union[int, list]] = None,
+    step: Union[int, str] = "absMax",
+    resp_type: str = "sectionForces",
+    resp_dof: str = "MXX",
+    shell_fiber_loc: Optional[Union[str, int]] = "top",
+) -> pv.UnstructuredGrid:
+    """Get unstructured element (Shell, Plane, Brick) Dataset (Pyvista).
+    Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
+
+    .. note::
+        This function is used to get the dataset for unstructured element responses.
+        It is useful for further processing or visualization in PyVista.
+        For more details, please refer to the
+        `Pyvista Examples <https://docs.pyvista.org/examples/>`_.
+
+    Parameters
+    ----------
+    odb_tag: Union[int, str], default: 1
+        Tag of output databases (ODB) to be visualized.
+    ele_tags: Union[int, list], default: None
+        The tags of elements to be visualized.
+        If None, all elements are selected.
+    step: Union[int, str], default: "absMax"
+        If slides = False, this parameter will be used as the step to plot.
+        If str, Optional: [absMax, absMin, Max, Min].
+        If int, this step will be demonstrated (counting from 0).
+    ele_type: str, default: "Shell"
+        Element type, optional, one of ["Shell", "Plane", "Solid"].
+    resp_type: str, default: None
+        Response type, which dependents on the element type `ele_type`.
+
+        #. For ``Shell`` elements, one of ["sectionForces", "sectionDeformations", "sectionForcesAtNodes", "sectionDeformationsAtNodes", "Stresses", "Strains", "StressesAtNodes", "StrainsAtNodes"].
+            If it endswith `AtNodes`, responses at nodes will be displayed,
+            else responses at Gaussian integration points will be averaged for each element (per unit length).
+            If None, defaults to "sectionForces".
+        #. For ``Plane`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
+            If it endswith `AtNodes`, responses at nodes will be displayed,
+            else responses at Gaussian integration points will be averaged for each element.
+            If None, defaults to "stresses".
+        #. For ``Brick`` or ``Solid`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
+            If it endswith `AtNodes`, responses at nodes will be displayed,
+            else responses at Gaussian integration points will be averaged for each element.
+            If None, defaults to "stresses".
+
+    resp_dof: str, default: None
+        Dof to be visualized, which dependents on the element type `ele_type`.
+
+        .. Note::
+            The `resp_dof` here is consistent with stress-strain (force-deformation),
+            and whether it is stress or strain depends on the parameter `resp_type`.
+
+        #. For ``Shell`` elements, If resp_type is the section responses, one of ["FXX", "FYY", "FXY", "MXX", "MYY", "MXY", "VXZ", "VYZ"]. If resp_type is the stress or strain, one of ["sigma11", "sigma22", "sigma12", "sigma23", "sigma13"].
+            If None, defaults to "MXX".
+        #. For ``Plane`` elements, one of ["sigma11", "sigma22", "sigma12", "p1", "p2", "sigma_vm", "tau_max"].
+
+            * "sigma11, sigma22, sigma12": Normal stress and shear stress (strain) in the x-y plane.
+            * "p1, p2": Principal stresses (strains).
+            * "sigma_vm": Von Mises stress.
+            * "tau_max": Maximum shear stress (strains).
+            * If None, defaults to "sigma_vm".
+
+        #. For ``Brick`` or ``Solid`` elements, one of ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"]
+
+            * "sigma11, sigma22, sigma33": Normal stress (strain) along x, y, z.
+            * "sigma12, sigma23, sigma13": Shear stress (strain).
+            * "p1, p2, p3": Principal stresses (strains).
+            * "sigma_vm": Von Mises stress.
+            * "tau_max": Maximum shear stress (strains).
+            * "sigma_oct": Octahedral normal stress (strains).
+            * "tau_oct": Octahedral shear stress (strains).
+            * If None, defaults to "sigma_vm".
+
+    shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
+        The location of the fiber point for shell elements.
+        If str, one of ["top", "bottom", "middle"].
+        If int, the index of the fiber point to be visualized, from 1 (bottom) to N (top).
+        The fiber point is the fiber layer in the shell section.
+        Note that this parameter is only valid for stresses and strains in shell elements.
+
+    Returns
+    -------
+    dataset: `pyvista.UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_.
+        PyVista UnstructuredGrid dataset containing the response data for the specified elements and step.
+        Scalars are stored in the "scalars" field of the dataset.
+
+        Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
+    """
+    model_info_steps, model_update, resp_step = loadODB(odb_tag, resp_type=ele_type)
+    _, _, node_resp_steps = loadODB(odb_tag, resp_type="Nodal", verbose=False)
+    plotbase = PlotUnstruResponse(model_info_steps, resp_step, model_update, nodal_resp_steps=node_resp_steps)
+    plotbase.refactor_resp_step(
+        ele_tags=ele_tags, ele_type=ele_type, resp_type=resp_type, component=resp_dof, fiber_point=shell_fiber_loc
+    )
+    return plotbase.get_dataset(step, ele_tags)

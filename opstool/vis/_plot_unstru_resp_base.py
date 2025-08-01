@@ -37,7 +37,7 @@ class PlotUnstruResponseBase(PlotResponseBase):
         self.ele_type = ele_type
         self.resp_type = resp_type
         self.component = component
-        self.fiber_point = fiber_point
+        self.fiber_point = fiber_point  # for shell elements only
 
         self._check_input()
 
@@ -71,6 +71,8 @@ class PlotUnstruResponseBase(PlotResponseBase):
         self.resp_step = resps
 
     def _process_scalar_from_da(self, da, pos, fiber_point):
+        """process the response data array to extract scalar values."""
+
         def _reset_fiber_point(fiber_point, da):
             if fiber_point == "top":
                 fiber_point = da.coords["fiberPoints"].values[-1]
@@ -80,23 +82,23 @@ class PlotUnstruResponseBase(PlotResponseBase):
                 fiber_point = da.coords["fiberPoints"].values[len(da.coords["fiberPoints"]) // 2]
             return fiber_point
 
-        if "nodeTags" in da.dims:
+        if "nodeTags" in da.dims:  # response at nodes
             scalars = pos.sel(coords="x").copy() * 0
-            if "fiberPoints" in da.dims:
+            if "fiberPoints" in da.dims:  # response at fiber points (shells)
                 fiber_point = _reset_fiber_point(fiber_point, da)
                 da = da.sel(fiberPoints=fiber_point)
             scalars.loc[{"nodeTags": da.coords["nodeTags"]}] = da
             return scalars
 
-        if "fiberPoints" in da.dims and "GaussPoints" in da.dims:
+        if "fiberPoints" in da.dims and "GaussPoints" in da.dims:  # response at fiber points and Gauss points (shells)
             fiber_point = _reset_fiber_point(fiber_point, da)
             da = da.sel(fiberPoints=fiber_point)
             return da.sel(fiberPoints=fiber_point).mean(dim="GaussPoints", skipna=True)
 
-        if "GaussPoints" in da.dims:
+        if "GaussPoints" in da.dims:  # response at Gauss points
             return da.mean(dim="GaussPoints", skipna=True)
 
-        return da  # fallback: return raw
+        return da  # fallback: return raw data
 
     def _get_resp_peak(self, idx="absMax"):
         if isinstance(idx, str):

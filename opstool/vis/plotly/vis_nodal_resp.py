@@ -276,7 +276,7 @@ def plot_nodal_responses(
     odb_tag: Union[int, str] = 1,
     slides: bool = False,
     step: Union[int, str] = "absMax",
-    scale: Union[float, int, bool] = 1.0,
+    defo_scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
@@ -302,7 +302,7 @@ def plot_nodal_responses(
         If slides = False, this parameter will be used as the step to plot.
         If str, Optional: [absMax, absMin, Max, Min].
         If int, this step will be demonstrated (counting from 0).
-    scale: float, default: 1.0
+    defo_scale: float, default: 1.0
         Scales the size of the deformation presentation.
         If set to False, the deformed shape will not be scaled (original deformation).
         If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
@@ -360,7 +360,7 @@ def plot_nodal_responses(
     plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)
     if slides:
         plotbase.plot_slide(
-            alpha=scale,
+            alpha=defo_scale,
             show_defo=show_defo,
             show_bc=show_bc,
             bc_scale=bc_scale,
@@ -371,7 +371,7 @@ def plot_nodal_responses(
     else:
         plotbase.plot_peak_step(
             step=step,
-            alpha=scale,
+            alpha=defo_scale,
             show_defo=show_defo,
             show_bc=show_bc,
             bc_scale=bc_scale,
@@ -385,7 +385,7 @@ def plot_nodal_responses(
 def plot_nodal_responses_animation(
     odb_tag: Union[int, str] = 1,
     framerate: Optional[int] = None,
-    scale: Union[float, int, bool] = 1.0,
+    defo_scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
@@ -407,7 +407,7 @@ def plot_nodal_responses_animation(
     framerate: int, default: 5
         Framerate for the display, i.e., the number of frames per second.
         For example, if an earthquake analysis has 1000 steps and you want to complete the demonstration in ten seconds, you should set ``framerate = 1000/10 = 100``.
-    scale: float, default: 1.0
+    defo_scale: float, default: 1.0
         Scales the size of the deformation presentation.
         If set to False, the deformed shape will not be scaled (original deformation).
         If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
@@ -458,7 +458,7 @@ def plot_nodal_responses_animation(
     plotbase.set_unit(symbol=unit_symbol, factor=unit_factor)
     plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)
     plotbase.plot_anim(
-        alpha=scale,
+        alpha=defo_scale,
         show_defo=show_defo,
         framerate=framerate,
         show_bc=show_bc,

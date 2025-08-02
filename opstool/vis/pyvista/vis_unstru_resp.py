@@ -65,12 +65,12 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         scalars = self.resp_step[step].to_numpy()
         return pos_defo, cells, cell_types, scalars
 
-    def get_dataset(self, step, ele_tags=None):
+    def get_dataset(self, step, ele_tags=None, defo_scale=1.0):
         """Get the dataset for the specified step and element tags."""
         step, clim = self._get_resp_peak(idx=step)
-        pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale=0.0)
+        pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale=defo_scale)
         grid = pv.UnstructuredGrid(cells, cell_types, pos)
-        grid["scalars"] = scalars
+        grid[self.resp_type] = scalars
         return grid
 
     def _create_mesh(
@@ -680,6 +680,7 @@ def get_unstruct_responses_dataset(
     resp_type: str = "sectionForces",
     resp_dof: str = "MXX",
     shell_fiber_loc: Optional[Union[str, int]] = "top",
+    defo_scale: Union[float, int, bool] = 0.0,
 ) -> pv.UnstructuredGrid:
     """Get unstructured element (Shell, Plane, Brick) Dataset (Pyvista).
     Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
@@ -753,12 +754,17 @@ def get_unstruct_responses_dataset(
         If int, the index of the fiber point to be visualized, from 1 (bottom) to N (top).
         The fiber point is the fiber layer in the shell section.
         Note that this parameter is only valid for stresses and strains in shell elements.
+    defo_scale: float, default: 0.0
+        Scales the size of the deformation presentation.
+        If set to False or 0.0, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
 
     Returns
     -------
     dataset: `pyvista.UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_.
         PyVista UnstructuredGrid dataset containing the response data for the specified elements and step.
-        Scalars are stored in the "scalars" field of the dataset.
+        Scalars are stored in the ``resp_type`` field of the dataset.
 
         Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
     """
@@ -768,4 +774,4 @@ def get_unstruct_responses_dataset(
     plotbase.refactor_resp_step(
         ele_tags=ele_tags, ele_type=ele_type, resp_type=resp_type, component=resp_dof, fiber_point=shell_fiber_loc
     )
-    return plotbase.get_dataset(step, ele_tags)
+    return plotbase.get_dataset(step, ele_tags, defo_scale=defo_scale)

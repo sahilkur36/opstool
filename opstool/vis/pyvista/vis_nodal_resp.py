@@ -63,7 +63,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             scalars = node_resp if node_resp.ndim == 1 else np.linalg.norm(node_resp, axis=1)
         return node_defo_coords, scalars
 
-    def get_dataset(self, step):
+    def get_dataset(self, step, defo_scale=1.0):
         cmin, cmax, step = self._get_resp_clim_peak(idx=step)
         if self.resps_norm is not None:
             scalars = self.resps_norm[step]
@@ -71,31 +71,24 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             node_resp = np.array(self._get_resp_da(step, self.resp_type, self.component))
             scalars = node_resp if node_resp.ndim == 1 else np.linalg.norm(node_resp, axis=1)
         # ----------------------------------
-        pos = np.array(self._get_node_da(step))
-        # -----------------------------------------------------
-        if len(pos) > 0:
-            point_grid = pv.PolyData(pos)
-            point_grid["scalars"] = scalars
-        else:
-            point_grid = pv.PolyData()  # Empty PolyData if no nodes are present
-        # -----------------------------------------------------
+        pos = np.array(self._get_defo_coord_da(step, defo_scale))
         line_cells, _ = self._get_line_cells(self._get_line_da(step))
-        if len(line_cells) > 0:
-            line_grid = pv.PolyData()
-            line_grid.points = pos
-            line_grid.lines = line_cells
-            line_grid["scalars"] = scalars
-        else:
-            line_grid = pv.PolyData()  # Empty PolyData if no lines are present
-        # -----------------------------------------------------
         _, unstru_cell_types, unstru_cells = self._get_unstru_cells(self._get_unstru_da(step))
-        if len(unstru_cells) > 0:
-            unstru_grid = pv.UnstructuredGrid(unstru_cells, unstru_cell_types, pos)
-            unstru_grid["scalars"] = scalars
+
+        cells, celltypes = [], []
+        for cell in line_cells:
+            cells.extend(cell)
+            celltypes.append(pv.CellType.LINE)
+        for cell_type, cell in zip(unstru_cell_types, unstru_cells):
+            cells.extend(cell)
+            celltypes.append(cell_type)
+
+        if len(cells) > 0:
+            unstru_grid = pv.UnstructuredGrid(cells, celltypes, pos)
+            unstru_grid[self.resp_type] = scalars
         else:
             unstru_grid = pv.UnstructuredGrid()  # Empty UnstructuredGrid if no cells are present
-
-        return point_grid, line_grid, unstru_grid
+        return unstru_grid
 
     def _create_mesh(
         self,
@@ -356,8 +349,8 @@ def plot_nodal_responses(
     odb_tag: Union[int, str] = 1,
     slides: bool = False,
     step: Union[int, str] = "absMax",
-    scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
+    defo_scale: Union[float, int, bool] = 1.0,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
     unit_symbol: Optional[str] = None,
@@ -383,7 +376,7 @@ def plot_nodal_responses(
         If slides = False, this parameter will be used as the step to plot.
         If str, Optional: [absMax, absMin, Max, Min].
         If int, this step will be demonstrated (counting from 0).
-    scale: float, default: 1.0
+    defo_scale: Union[float, int, bool] = 1.0
         Scales the size of the deformation presentation.
         If set to False, the deformed shape will not be scaled (original deformation).
         If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
@@ -454,7 +447,7 @@ def plot_nodal_responses(
     if slides:
         plotbase.plot_slide(
             plotter,
-            alpha=scale,
+            alpha=defo_scale,
             show_defo=show_defo,
             show_bc=show_bc,
             bc_scale=bc_scale,
@@ -468,7 +461,7 @@ def plot_nodal_responses(
         plotbase.plot_peak_step(
             plotter,
             step=step,
-            alpha=scale,
+            alpha=defo_scale,
             show_defo=show_defo,
             show_bc=show_bc,
             bc_scale=bc_scale,
@@ -488,7 +481,7 @@ def plot_nodal_responses_animation(
     framerate: Optional[int] = None,
     savefig: str = "NodalRespAnimation.gif",
     off_screen: bool = True,
-    scale: Union[float, int, bool] = 1.0,
+    defo_scale: Union[float, int, bool] = 1.0,
     show_defo: bool = True,
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
@@ -515,7 +508,7 @@ def plot_nodal_responses_animation(
     off_screen: bool, default: True
         Whether to display the plotting window.
         If True, the plotting window will not be displayed.
-    scale: float, default: 1.0
+    defo_scale: Union[float, int, bool] = 1.0
         Scales the size of the deformation presentation.
         If set to False, the deformed shape will not be scaled (original deformation).
         If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
@@ -579,7 +572,7 @@ def plot_nodal_responses_animation(
     plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)
     plotbase.plot_anim(
         plotter,
-        alpha=scale,
+        alpha=defo_scale,
         show_defo=show_defo,
         framerate=framerate,
         savefig=savefig,
@@ -604,9 +597,10 @@ def get_nodal_responses_dataset(
     step: Union[int, str] = "absMax",
     resp_type: str = "disp",
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
-) -> tuple[pv.PolyData, pv.PolyData, pv.UnstructuredGrid]:
+    defo_scale: Union[float, int, bool] = 1.0,
+) -> pv.UnstructuredGrid:
     """Get nodal responses dataset.
-    Scalars are stored in the "scalars" field of the dataset.
+    Scalars are stored in the ``resp_type`` field of the dataset.
 
     Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
 
@@ -634,15 +628,11 @@ def get_nodal_responses_dataset(
 
     Returns
     -------
-    point_grid: `pyvista.PolyData <https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata#pyvista.PolyData>`_.
-        Point grid with nodal coordinates and response scalars.
-    line_grid: `pyvista.PolyData <https://docs.pyvista.org/api/core/_autosummary/pyvista.polydata#pyvista.PolyData>`_.
-        Line grid with line cells and response scalars.
     unstru_grid: `pyvista.UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_.
         Unstructured grid with unstructured cells and response scalars.
     """
     model_info_steps, model_update, node_resp_steps = loadODB(odb_tag, resp_type="Nodal")
     plotbase = PlotNodalResponse(model_info_steps, node_resp_steps, model_update)
     plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)
-    point_grid, line_grid, unstru_grid = plotbase.get_dataset(step)
-    return point_grid, line_grid, unstru_grid
+    unstru_grid = plotbase.get_dataset(step, defo_scale=defo_scale)
+    return unstru_grid

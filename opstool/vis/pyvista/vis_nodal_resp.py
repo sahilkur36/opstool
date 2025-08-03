@@ -602,6 +602,8 @@ def get_nodal_responses_dataset(
     """Get nodal responses dataset.
     Scalars are stored in the ``resp_type`` field of the dataset.
 
+    Added in version 1.0.18+.
+
     Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
 
     Parameters
@@ -625,6 +627,11 @@ def get_nodal_responses_dataset(
             If the nodes include fluid pressure dof,
             such as those used for ...UP elements, the pore pressure should be extracted using ``resp_type="vel"``,
             and ``resp_dof="RZ"``.
+    defo_scale: Union[float, int, bool] = 1.0
+        Scales the size of the deformation presentation.
+        If set to False, the deformed shape will not be scaled (original deformation).
+        If set to True or "auto", the deformed shape will be scaled by the default scale (i.e., 1/20 of the maximum model dimensions).
+        If set to a float or int, it will scale the deformed shape by that factor.
 
     Returns
     -------

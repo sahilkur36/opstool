@@ -685,6 +685,8 @@ def get_unstruct_responses_dataset(
     """Get unstructured element (Shell, Plane, Brick) Dataset (Pyvista).
     Data Model in PyVista can be found at `PyVista Data Model <https://docs.pyvista.org/user-guide/data_model>`_.
 
+    Added in version 1.0.18+.
+
     .. note::
         This function is used to get the dataset for unstructured element responses.
         It is useful for further processing or visualization in PyVista.

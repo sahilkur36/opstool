@@ -22,6 +22,7 @@ class PlotResponseBase:
         self.num_steps = len(self.time)
 
         self.points_origin = self._get_node_da(0).to_numpy()
+        self.points = self.points_origin.copy()
         self.bounds = self._get_node_da(0).attrs["bounds"]
         self.max_bound_size = self._get_node_da(0).attrs["maxBoundSize"]
         self.min_bound_size = self._get_node_da(0).attrs["minBoundSize"]

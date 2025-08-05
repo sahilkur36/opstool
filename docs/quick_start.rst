@@ -22,14 +22,14 @@ Quick Guide
   .. toctree::
     :maxdepth: 1
 
-    examples/post/Frame2D/test_model.ipynb
     src/quick_start/plot_model.ipynb
+    examples/post/Frame2D/test_model.ipynb
 
 
-Other Features
+Features
 ---------------
 
-.. card:: :octicon:`graph;1.5em;sd-mr-1 fill-primary` Preprocessing Tools
+.. card:: :octicon:`graph;1.5em;sd-mr-1 fill-primary` Preprocessing
 
    - :blue-bold:`Fiber Section Meshing`: Generate detailed fiber meshes for various geometries. An example is shown below:
      `Fiber Section Mesh <src/pre/sec_mesh.ipynb>`_
@@ -45,10 +45,107 @@ Other Features
      An example is shown below: `Tcl to OpenSeesPy <src/pre/tcl2py.rst>`_
 
 
-.. card:: :octicon:`database;1.5em;sd-mr-1 fill-primary` Postprocessing Capabilities
+.. card:: :octicon:`database;1.5em;sd-mr-1 fill-primary` Postprocessing
    
-   - Easy retrieval and interpretation of analysis results using `xarray <https://docs.xarray.dev/en/stable/index.html#>`__.
-     An example is shown below: `Postprocessing with xarray <src/post/index.ipynb>`_
+  Easy retrieval and interpretation of analysis results using `xarray <https://docs.xarray.dev/en/stable/index.html#>`__.
+
+  All examples are shown below: `Postprocessing with xarray <src/post/index.ipynb>`_
+
+  The following is a non-exhaustive list of response types supported by this library:
+
+  .. tab-set::
+    :sync-group: category
+
+    .. tab-item:: Nodal
+        :sync: key1
+
+        ✅ "disp"
+        ✅ "vel"
+        ✅ "accel"
+        ✅ "reaction"
+        ✅ "reactionIncInertia"
+        ✅ "rayleighForces"
+        ✅ "pressure"
+
+    .. tab-item:: Frame
+        :sync: key2
+
+        ✅ "localForces"
+        ✅ "basicForces"
+        ✅ "basicDeformations"
+        ✅ "plasticDeformation"
+        ✅ "sectionForces"
+        ✅ "sectionDeformations"
+        ✅ "sectionLocs"
+    
+    .. tab-item:: Truss
+        :sync: key3
+
+        ✅ "axialForce" ✅ "axialDefo" ✅ "Stress" ✅ "Strain"
+    
+    .. tab-item:: Link
+        :sync: key4
+
+        ✅ "basicDeformation" ✅ "basicForce"
+    
+    .. tab-item:: Fiber Section
+        :sync: key5
+
+        ✅ "Stresses" ✅ "Strains" ✅ "secForce" ✅ "secDefo"
+    
+    .. tab-item:: Shell
+        :sync: key6
+
+        ✅ "sectionForces"
+        ✅ "sectionDeformations"
+        ✅ "Stresses"
+        ✅ "Strains"
+        ✅ "sectionForcesAtNodes"
+        ✅ "sectionDeformationsAtNodes"
+        ✅ "StressesAtNodes"
+        ✅ "StrainsAtNodes"
+    
+    .. tab-item:: Plane
+        :sync: key7
+
+        ✅ "Stresses"
+        ✅ "Strains"
+        ✅ "StressesAtNodes"
+        ✅ "StressAtNodesErr"
+        ✅ "StrainsAtNodes"
+        ✅ "StrainsAtNodesErr"
+        ✅ "StressMeasures"
+        ✅ "StrainMeasures"
+        ✅ "StressMeasuresAtNodes"
+        ✅ "StrainMeasuresAtNodes"
+    
+    .. tab-item:: Solid
+        :sync: key8
+
+        ✅ "Stresses"
+        ✅ "Strains"
+        ✅ "StressesAtNodes"
+        ✅ "StressAtNodesErr"
+        ✅ "StrainsAtNodes"
+        ✅ "StrainsAtNodesErr"
+        ✅ "StressMeasures"
+        ✅ "StrainMeasures"
+        ✅ "StressMeasuresAtNodes"
+        ✅ "StrainMeasuresAtNodes"
+    
+    .. tab-item:: Contact
+        :sync: key9
+
+        ✅ "globalForces" ✅ "localForces" ✅ "localDisp" ✅ "slips"
+    
+    .. tab-item:: Sensitivity Analysis
+        :sync: key10
+
+        ✅ "disp"
+        ✅ "vel"
+        ✅ "accel"
+        ✅ "pressure"
+        ✅ "lambdas"
 
 .. card:: :octicon:`eye;1.5em;sd-mr-1 fill-primary` Visualization
    

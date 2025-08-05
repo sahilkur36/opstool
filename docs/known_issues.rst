@@ -1,6 +1,4 @@
 Known Issues
 ==============
 
-- Please use English names as much as possible for the ``working path``. 
-  If it contains special Unicode characters such as Chinese characters and accent marks, 
-  ``xarray`` data may not be saved. This may be due to the current ``xarray`` bug.
+- Please use English characters only in the ``working path``. If the path contains special Unicode characters such as Chinese or accented letters, saving data with ``xarray`` may fail due to a known issue. As a workaround, consider moving the project to a directory with only ASCII characters.

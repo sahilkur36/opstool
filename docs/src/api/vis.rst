@@ -46,3 +46,5 @@ Plotly-based and Pyvista-based visualization functions for structural analysis r
             opstool.vis.pyvista.plot_frame_responses_animation
             opstool.vis.pyvista.plot_unstruct_responses
             opstool.vis.pyvista.plot_unstruct_responses_animation
+            opstool.vis.pyvista.get_nodal_responses_dataset
+            opstool.vis.pyvista.get_unstruct_responses_dataset

@@ -112,5 +112,5 @@ html_sidebars = {
 html_context = {"repository": "yexiang92/opstool"}
 
 
-pygments_style = "tango"
+pygments_style = "gruvbox-light"
 pygments_dark_style = "lightbulb"

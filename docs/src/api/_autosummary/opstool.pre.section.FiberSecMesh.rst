@@ -36,6 +36,7 @@
       ~FiberSecMesh.get_rebars_num
       ~FiberSecMesh.get_sec_props
       ~FiberSecMesh.get_section
+      ~FiberSecMesh.get_section_geometry
       ~FiberSecMesh.get_stress
       ~FiberSecMesh.mesh
       ~FiberSecMesh.rotate

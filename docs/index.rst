@@ -76,30 +76,40 @@
 .. grid:: 1 1 2 2
    :gutter: 2
 
-   .. grid-item-card:: :octicon:`shield-check;1.5em;sd-mr-1 fill-primary` Preprocessing Capabilities
+   .. grid-item-card:: :octicon:`stack;1.5em;sd-mr-1 fill-primary` Preprocessing
 
-      - Fiber Section Meshing and Property Calculation Using `sectionproperties <https://sectionproperties.readthedocs.io/en/stable/>`__
-      - Easily translate Tcl-based OpenSees models into Python scripts
-      - Unified Unit Conversion System
-      - Integration with `Gmsh <https://gmsh.info/>`__ Meshing
-      - Features in Development
-  
-   .. grid-item-card:: :octicon:`checkbox;1.5em;sd-mr-1 fill-primary` Elegant Visualization
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Fiber Section Meshing and Property Calculation
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Easily translate Tcl-based OpenSees models into Python scripts
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Unified Unit Conversion System
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Integration with `Gmsh <https://gmsh.info/>`__ Meshing
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Fast gravity load application
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` System matrix extraction
+      - :octicon:`zap;1.0em;sd-mr-1 fill-primary` Features in Development
+
+   .. grid-item-card:: :octicon:`eye;1.5em;sd-mr-1 fill-primary` Elegant Visualization
 
       - Powered by `PyVista <https://docs.pyvista.org/>`__ and `Plotly <https://plotly.com/python/>`__
-      - Supporting most commonly used OpenSees element types
-      - Nearly identical APIs are tailored for both engines
+      - Supporting most commonly used OpenSees element types.
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Truss Elements
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Frame Elements   
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Link Elements
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Shell Elements
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Plane Elements
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Solid Elements
 
-   .. grid-item-card:: :octicon:`workflow;1.5em;sd-mr-1 fill-primary` Data Processing
+   .. grid-item-card:: :octicon:`workflow;1.5em;sd-mr-1 fill-primary` Results Post-Processing
 
-      Analysis results are saved and processed using `xarray <https://docs.xarray.dev/en/stable/index.html#>`__, 
-      enabling easy retrieval and interpretation of analysis outcomes.
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Powered by `xarray <https://docs.xarray.dev/en/stable/index.html#>`_
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Nodal Responses, Various Element Responses (Truss, Frame, Link, Shell, Plane, Solid, Contact).
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Static and Dynamic Analysis
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Sensitivity Analysis
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Linear Buckling Analysis
    
    .. grid-item-card:: :octicon:`dependabot;1.5em;sd-mr-1 fill-primary` Analysis Assistance
 
-      - Smart Analysis, features include automatic step size division, algorithm switching, and other advanced functionalities
-      - Moment-Curvature Analysis of Sections
-      - Linar Buckling Analysis
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Smart Analysis, features include automatic step size division, algorithm switching, and other advanced functionalities
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Moment-Curvature Analysis of Sections
+      - :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` Linar Buckling Analysis
 
 ----------------
 
@@ -131,21 +141,6 @@ If you used OPSTOOL in your scientific publication, we would very appreciated if
       issn = {2352-7110},
       doi = {https://doi.org/10.1016/j.softx.2025.102126},
       }
-
-
-Why Choose opstool?
---------------------
-
-- **Efficiency**: Streamlines complex workflows, reducing time spent on repetitive tasks.
-- **Flexibility**: Provides nearly identical interfaces for different visualization engines.
-- **Accessibility**: Makes advanced structural analysis tools like OpenSeesPy more approachable to users of all levels.
-
-``opstool`` is actively evolving, with continuous additions of new features planned for the future.
-With ``opstool``, you can focus on what matters most: 
-understanding and solving your structural engineering challenges. 
-Whether you are building models, visualizing results, or interpreting data, 
-``opstool`` is your go-to solution for OpenSeesPy workflows.
-
 
 Contents
 --------
@@ -184,7 +179,22 @@ Contents
    src/api/vis
    src/api/analysis
 
-                                                                                                        
+
+
+Why Choose opstool?
+--------------------
+
+- **Efficiency**: Streamlines complex workflows, reducing time spent on repetitive tasks.
+- **Flexibility**: Provides nearly identical interfaces for different visualization engines.
+- **Accessibility**: Makes advanced structural analysis tools like OpenSeesPy more approachable to users of all levels.
+
+``opstool`` is actively evolving, with continuous additions of new features planned for the future.
+With ``opstool``, you can focus on what matters most: 
+understanding and solving your structural engineering challenges. 
+Whether you are building models, visualizing results, or interpreting data, 
+``opstool`` is your go-to solution for OpenSeesPy workflows.
+
+                                                                                                       
                                                                                                                   
 
-📝 :blue:`This document is adapted from` `sphinx-needs <https://github.com/useblocks/sphinx-needs/>`__ :blue:`with modifications. We sincerely thank the original author(s) for their contribution.`
+:octicon:`copilot;1.25em;sd-mr-1 fill-primary` This document theme is adapted from `sphinx-needs <https://github.com/useblocks/sphinx-needs/>`__ with modifications. We sincerely thank the original author(s) for their contribution.`

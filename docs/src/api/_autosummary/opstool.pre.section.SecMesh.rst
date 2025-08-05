@@ -36,6 +36,7 @@
       ~SecMesh.get_rebars_num
       ~SecMesh.get_sec_props
       ~SecMesh.get_section
+      ~SecMesh.get_section_geometry
       ~SecMesh.get_stress
       ~SecMesh.mesh
       ~SecMesh.rotate

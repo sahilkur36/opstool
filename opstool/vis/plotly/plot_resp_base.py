@@ -205,14 +205,19 @@ class PlotResponsePlotlyBase(PlotResponseBase):
 
         return self.FIGURE
 
-    @staticmethod
-    def _get_plotly_dim_scene(mode="3d", show_outline=True):
+    def _get_plotly_dim_scene(self, mode="3d", show_outline=True):
         if show_outline:
             off_axis = {"showgrid": True, "zeroline": True, "visible": True}
         else:
             off_axis = {"showgrid": False, "zeroline": False, "visible": False}
+        center = np.mean(self.points, axis=0)
+        max_range = np.ptp(self.points, axis=0).max()  # ptp: max - mi
         if mode.lower() == "3d":
-            eye = {"x": -3.5, "y": -3.5, "z": 3.5}  # for 3D camera
+            eye = {
+                "x": -max_range * 2,
+                "y": -max_range * 2,
+                "z": max_range * 5,
+            }  # for 3D camera
             scene = {
                 "aspectratio": {"x": 1, "y": 1, "z": 1},
                 "aspectmode": "data",
@@ -237,7 +242,11 @@ class PlotResponsePlotlyBase(PlotResponseBase):
                 xaxis = off_axis
                 yaxis = off_axis
                 zaxis = off_axis
-            eye = {"x": 0.0, "y": -0.1, "z": 10}  # for 2D camera
+            eye = {
+                "x": 0,
+                "y": -0.1,
+                "z": max_range * 1,
+            }  # for 2D camera
             scene = {
                 "camera": {"eye": eye},
                 "aspectmode": "data",

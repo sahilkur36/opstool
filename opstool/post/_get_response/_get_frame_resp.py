@@ -365,20 +365,45 @@ def _extract_pattern_info(ele_load_data):
     return np.array(pattern_tags), np.array(load_eletags)
 
 
+def _get_section_locs(eletag, length):
+    sec_locs = ops.sectionLocation(eletag)
+    if not sec_locs:
+        num_secs = 0
+        for i in range(100000):
+            output = ops.sectionForce(eletag, i + 1)
+            if not output:
+                break
+            num_secs += 1
+        if num_secs == 0:
+            sec_locs = np.array([])
+        elif num_secs == 1:
+            sec_locs = np.array([0.5])
+        else:
+            sec_locs = np.linspace(0, 1, num_secs)
+    else:
+        sec_locs = np.array(sec_locs) / length
+    return sec_locs
+
+
 def _get_nonlinear_section_response(eletag, length):
     xlocs, sec_f, sec_d = [], [], []
-    for i, loc in enumerate(ops.sectionLocation(eletag) / length):
+    sec_locs = _get_section_locs(eletag, length)
+    for i, loc in enumerate(sec_locs):
         xlocs.append(loc)
         forces = _format_six_component(ops.sectionForce(eletag, i + 1))
         defos = _format_six_component(ops.sectionDeformation(eletag, i + 1))
         sec_f.append(forces)
         sec_d.append(defos)
+    if len(xlocs) == 0:
+        xlocs = [0.0]
+        sec_f = [[np.nan] * 6]
+        sec_d = [[np.nan] * 6]
     xlocs, sec_f, sec_d = np.array(xlocs), np.array(sec_f), np.array(sec_d)
     return xlocs, sec_f, sec_d
 
 
 def _format_six_component(vec):
-    if len(vec) == 0:
+    if not vec:
         return [0.0] * 6
     if len(vec) == 2:
         return [vec[0], vec[1], 0.0, 0.0, 0.0, 0.0]

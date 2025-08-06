@@ -20,6 +20,7 @@ xarray = ">=2024.10.0"
 netcdf4 = ">=1.7.1.post2"
 imageio = {extras = ["ffmpeg"], version = ">=2.36.1"}
 typing-extensions = "^4.14.0"
+tqdm = ">=4.66.0"
 rich = ">=13.9.2"
 sectionproperties = ">=3.4.0"
 shapely = ">=2.0.6"
@@ -34,8 +35,6 @@ ipywidgets = ">=8.1.5"
 trame-vtk = ">=2.8.12"
 trame-vuetify = ">=2.7.2"
 trame-components = ">=2.4.2"
-# polyscope
-polyscope = "^2.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"

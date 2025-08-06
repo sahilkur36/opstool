@@ -22,7 +22,7 @@ class FiberSecData:
 
         for ele_tag in ele_tags:
             ele_tag = int(ele_tag)
-            sec_locs = ops.sectionLocation(ele_tag)
+            sec_locs = _get_section_locs(ele_tag)
             if isinstance(sec_locs, list) and len(sec_locs) > 0:
                 cls.ELE_SEC_KEYS[ele_tag] = len(sec_locs)
 
@@ -264,7 +264,7 @@ def _get_fiber_sec_data(ele_tag: int, sec_num: int = 1, dtype: Optional[dict] = 
     if dtype is None:
         dtype = {"float": np.float32, "int": np.int32}
     # Extract fiber data using eleResponse() command
-    sec_loc = ops.sectionLocation(ele_tag)
+    sec_loc = _get_section_locs(ele_tag)
     if len(sec_loc) == 0:
         raise ValueError(f"eleTag {ele_tag} have no fiber sec!")  # noqa: TRY003
     if sec_num > len(sec_loc):
@@ -293,3 +293,25 @@ def _get_fiber_sec_data(ele_tag: int, sec_num: int = 1, dtype: Optional[dict] = 
         return fiber_data.astype(dtype["float"])
     # ------------------------------------------------------------------
     return np.array([[np.nan] * 6])
+
+
+def _get_section_locs(eletag):
+    sec_locs = ops.sectionLocation(eletag)
+    if not sec_locs:
+        num_secs = 0
+        for i in range(100000):
+            output = ops.eleResponse(eletag, "section", f"{i + 1}", "forces")
+            if (not output) and i == 0:
+                output = ops.eleResponse(eletag, "section", "forces")
+                num_secs = 1 if output else 0
+                break
+            elif not output:
+                break
+            num_secs += 1
+        if num_secs == 0:
+            sec_locs = np.array([])
+        elif num_secs == 1:
+            sec_locs = np.array([0.5])
+        else:
+            sec_locs = np.linspace(0, 1, num_secs)
+    return sec_locs

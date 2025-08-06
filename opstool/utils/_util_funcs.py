@@ -200,6 +200,21 @@ def suppress_ops_print():
         sys.stderr = stderr
 
 
+def on_notebook():
+    try:
+        from IPython import get_ipython
+
+        shell = get_ipython().__class__.__name__
+        if shell == "ZMQInteractiveShell":
+            return True  # Jupyter notebook or qtconsole
+        elif shell == "TerminalInteractiveShell":
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except Exception:
+        return False  # Probably standard Python interpreter
+
+
 def make_dependency_missing(name: str, dependency: str, extra=None):
     def _raise():
         msg = f"'{name}' requires the optional dependency '{dependency}'."

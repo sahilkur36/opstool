@@ -18,6 +18,7 @@ gmsh
 matplotlib
 openseespy
 sectionproperties
+tqdm
 rich
 Sphinx
 pythreejs

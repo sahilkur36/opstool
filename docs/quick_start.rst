@@ -57,95 +57,105 @@ Features
     :sync-group: category
 
     .. tab-item:: Nodal
-        :sync: key1
+        :sync: Nodal
 
-        ✅ "disp"
-        ✅ "vel"
-        ✅ "accel"
-        ✅ "reaction"
-        ✅ "reactionIncInertia"
-        ✅ "rayleighForces"
-        ✅ "pressure"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "disp"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "vel"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "accel"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "reaction"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "reactionIncInertia"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "rayleighForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "pressure"
 
     .. tab-item:: Frame
-        :sync: key2
+        :sync: Frame
 
-        ✅ "localForces"
-        ✅ "basicForces"
-        ✅ "basicDeformations"
-        ✅ "plasticDeformation"
-        ✅ "sectionForces"
-        ✅ "sectionDeformations"
-        ✅ "sectionLocs"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "localForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "basicForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "basicDeformations"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "plasticDeformation"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionDeformations"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionLocs"
+
     .. tab-item:: Truss
-        :sync: key3
+        :sync: Truss
 
-        ✅ "axialForce" ✅ "axialDefo" ✅ "Stress" ✅ "Strain"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "axialForce"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "axialDefo"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Stress"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Strain"
+
     .. tab-item:: Link
-        :sync: key4
+        :sync: Link
 
-        ✅ "basicDeformation" ✅ "basicForce"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "basicDeformation" 
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "basicForce"
     
     .. tab-item:: Fiber Section
-        :sync: key5
+        :sync: Fiber Section
 
-        ✅ "Stresses" ✅ "Strains" ✅ "secForce" ✅ "secDefo"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Stresses" 
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Strains" 
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "secForce" 
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "secDefo"
     
     .. tab-item:: Shell
-        :sync: key6
+        :sync: Shell
 
-        ✅ "sectionForces"
-        ✅ "sectionDeformations"
-        ✅ "Stresses"
-        ✅ "Strains"
-        ✅ "sectionForcesAtNodes"
-        ✅ "sectionDeformationsAtNodes"
-        ✅ "StressesAtNodes"
-        ✅ "StrainsAtNodes"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionDeformations"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Stresses"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Strains"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionForcesAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "sectionDeformationsAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressesAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainsAtNodes"
+
     .. tab-item:: Plane
-        :sync: key7
+        :sync: Plane
 
-        ✅ "Stresses"
-        ✅ "Strains"
-        ✅ "StressesAtNodes"
-        ✅ "StressAtNodesErr"
-        ✅ "StrainsAtNodes"
-        ✅ "StrainsAtNodesErr"
-        ✅ "StressMeasures"
-        ✅ "StrainMeasures"
-        ✅ "StressMeasuresAtNodes"
-        ✅ "StrainMeasuresAtNodes"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Stresses"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Strains"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressesAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressAtNodesErr"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainsAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainsAtNodesErr"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressMeasures"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainMeasures"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressMeasuresAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainMeasuresAtNodes"
+
     .. tab-item:: Solid
-        :sync: key8
+        :sync: Solid
 
-        ✅ "Stresses"
-        ✅ "Strains"
-        ✅ "StressesAtNodes"
-        ✅ "StressAtNodesErr"
-        ✅ "StrainsAtNodes"
-        ✅ "StrainsAtNodesErr"
-        ✅ "StressMeasures"
-        ✅ "StrainMeasures"
-        ✅ "StressMeasuresAtNodes"
-        ✅ "StrainMeasuresAtNodes"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Stresses"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "Strains"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressesAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressAtNodesErr"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainsAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainsAtNodesErr"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressMeasures"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainMeasures"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StressMeasuresAtNodes"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "StrainMeasuresAtNodes"
+
     .. tab-item:: Contact
-        :sync: key9
+        :sync: Contact
 
-        ✅ "globalForces" ✅ "localForces" ✅ "localDisp" ✅ "slips"
-    
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "globalForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "localForces"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "localDisp"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "slips"
+
     .. tab-item:: Sensitivity Analysis
-        :sync: key10
+        :sync: Sensitivity Analysis
 
-        ✅ "disp"
-        ✅ "vel"
-        ✅ "accel"
-        ✅ "pressure"
-        ✅ "lambdas"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "disp"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "vel"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "accel"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "pressure"
+        * :octicon:`checkbox;1.0em;sd-mr-1 fill-primary` "lambdas"
 
 .. card:: :octicon:`eye;1.5em;sd-mr-1 fill-primary` Visualization
    

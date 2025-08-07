@@ -210,7 +210,6 @@ class PlotResponsePlotlyBase(PlotResponseBase):
             off_axis = {"showgrid": True, "zeroline": True, "visible": True}
         else:
             off_axis = {"showgrid": False, "zeroline": False, "visible": False}
-        center = np.mean(self.points, axis=0)
         max_range = np.ptp(self.points, axis=0).max()  # ptp: max - mi
         if mode.lower() == "3d":
             eye = {
@@ -219,7 +218,7 @@ class PlotResponsePlotlyBase(PlotResponseBase):
                 "z": max_range * 5,
             }  # for 3D camera
             scene = {
-                "aspectratio": {"x": 1, "y": 1, "z": 1},
+                # "aspectratio": {"x": 1, "y": 1, "z": 1},
                 "aspectmode": "data",
                 "camera": {"eye": eye, "projection": {"type": "orthographic"}},
                 "xaxis": off_axis,

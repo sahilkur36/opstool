@@ -177,7 +177,7 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePlotlyBase):
 
     def _make_title(self, step, add_title=False):
         resp = self.resp_step[step].data
-        maxv, minv = np.max(resp), np.min(resp)
+        maxv, minv = np.nanmax(resp), np.nanmin(resp)
         t_ = self.time[step]
 
         title = f"<b>{self._set_txt_props(self.resp_type)} *</b><br>"

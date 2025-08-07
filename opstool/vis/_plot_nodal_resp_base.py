@@ -49,24 +49,24 @@ class PlotNodalResponseBase(PlotResponseBase):
             resps_norm = resps if resps[0].ndim == 1 else np.linalg.norm(resps, axis=2)
         if isinstance(idx, str):
             if idx.lower() == "absmax":
-                resp = [np.max(np.abs(data)) for data in resps]
+                resp = [np.nanmax(np.abs(data)) for data in resps]
                 step = np.argmax(resp)
             elif idx.lower() == "max":
                 resp = [np.max(data) for data in resps]
                 step = np.argmax(resp)
             elif idx.lower() == "absmin":
-                resp = [np.min(np.abs(data)) for data in resps]
+                resp = [np.nanmin(np.abs(data)) for data in resps]
                 step = np.argmin(resp)
             elif idx.lower() == "min":
-                resp = [np.min(data) for data in resps]
+                resp = [np.nanmin(data) for data in resps]
                 step = np.argmin(resp)
             else:
                 raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
         else:
             step = int(idx)
-        max_resps = [np.max(resp) for resp in resps_norm]
-        min_resps = [np.min(resp) for resp in resps_norm]
-        cmin, cmax = np.min(min_resps), np.max(max_resps)
+        max_resps = [np.nanmax(resp) for resp in resps_norm]
+        min_resps = [np.nanmin(resp) for resp in resps_norm]
+        cmin, cmax = np.nanmin(min_resps), np.nanmax(max_resps)
         self.resps_norm = resps_norm
         self.clim = (cmin, cmax)
         return cmin, cmax, step

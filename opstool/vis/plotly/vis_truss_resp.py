@@ -143,8 +143,8 @@ class PlotTrussResponse(PlotTrussResponseBase, PlotResponsePlotlyBase):
 
     def _make_title(self, step, add_title=False):
         resp = self.resp_step[step].to_numpy()
-        maxv = np.max(resp)
-        minv = np.min(resp)
+        maxv = np.nanmax(resp)
+        minv = np.nanmin(resp)
         t_ = self.time[step]
 
         title = f"<b>{self._set_txt_props(self.resp_type)} *</b><br>"

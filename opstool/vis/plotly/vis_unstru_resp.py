@@ -92,7 +92,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
 
     def _make_title(self, step, add_title=False):
         resp = self.resp_step[step].to_numpy()
-        maxv, minv = np.max(resp), np.min(resp)
+        maxv, minv = np.nanmax(resp), np.nanmin(resp)
         t_ = self.time[step]
 
         if self.resp_type.lower() in ["stressmeasures", "stressmeasuresatnodes"]:

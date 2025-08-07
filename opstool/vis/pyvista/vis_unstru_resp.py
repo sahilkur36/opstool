@@ -33,8 +33,8 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             "title": self.ele_type.capitalize(),
             "resp_type": resp_type,
             "dof": self.component.capitalize(),
-            "min": np.min(scalars),
-            "max": np.max(scalars),
+            "min": np.nanmin(scalars),
+            "max": np.nanmax(scalars),
             "step": step,
             "time": time,
         }

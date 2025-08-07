@@ -118,10 +118,10 @@ class PlotResponseBase:
         if isinstance(alpha, str) or alpha is True:
             if self.ModelUpdate:
                 scalars = [np.linalg.norm(resp, axis=-1) for resp in defos]
-                scalars = [np.max(scalar) for scalar in scalars]
+                scalars = [np.nanmax(scalar) for scalar in scalars]
             else:
                 scalars = np.linalg.norm(defos, axis=-1)
-            maxv = np.max(scalars)
+            maxv = np.nanmax(scalars)
             alpha_ = 0.0 if maxv == 0 else self.max_bound_size * self.pargs.scale_factor / maxv
             alpha_ = alpha_
         elif alpha is False or alpha is None:

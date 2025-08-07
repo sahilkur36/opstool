@@ -167,31 +167,31 @@ class PlotFrameResponseBase(PlotResponseBase):
     def _get_resp_scale_factor(self, idx="absMax"):
         if isinstance(idx, str):
             if idx.lower() == "absmax":
-                resp = [np.max(np.abs(data)) for data in self.resp_step]
+                resp = [np.nanmax(np.abs(data)) for data in self.resp_step]
                 step = np.argmax(resp)
             elif idx.lower() == "max":
-                resp = [np.max(data) for data in self.resp_step]
+                resp = [np.nanmax(data) for data in self.resp_step]
                 step = np.argmax(resp)
             elif idx.lower() == "absmin":
-                resp = [np.min(np.abs(data)) for data in self.resp_step]
+                resp = [np.nanmin(np.abs(data)) for data in self.resp_step]
                 step = np.argmin(resp)
             elif idx.lower() == "min":
-                resp = [np.min(data) for data in self.resp_step]
+                resp = [np.nanmin(data) for data in self.resp_step]
                 step = np.argmin(resp)
             else:
                 raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
         else:
             step = int(idx)
         resp = self.resp_step[step]
-        maxv = np.amax(np.abs(resp))
+        maxv = np.nanmax(np.abs(resp))
         alpha_ = 0.0 if maxv == 0 else self.max_bound_size * self.pargs.scale_factor / maxv
         cmin, cmax = self._get_resp_clim()
         return float(alpha_), step, (cmin, cmax)
 
     def _get_resp_clim(self):
-        maxv = [np.max(data) for data in self.resp_step]
-        minv = [np.min(data) for data in self.resp_step]
-        cmin, cmax = np.min(minv), np.max(maxv)
+        maxv = [np.nanmax(data) for data in self.resp_step]
+        minv = [np.nanmin(data) for data in self.resp_step]
+        cmin, cmax = np.nanmin(minv), np.nanmax(maxv)
         self.clim = (cmin, cmax)
         return cmin, cmax
 

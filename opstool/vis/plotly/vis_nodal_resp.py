@@ -26,7 +26,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
         self.title = {"text": title, "font": {"size": self.pargs.title_font_size}}
 
     def _make_title(self, step, add_title=False):
-        max_norm, min_norm = np.max(self.resps_norm[step]), np.min(self.resps_norm[step])
+        max_norm, min_norm = np.nanmax(self.resps_norm[step]), np.nanmin(self.resps_norm[step])
         title = "Nodal Responses"
         if self.resp_type == "disp":
             resp_type = "Displacement"

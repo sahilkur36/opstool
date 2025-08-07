@@ -142,8 +142,8 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
             "title": "Frame",
             "resp_type": self.resp_type.capitalize(),
             "dof": self.component_type,
-            "min": np.min(scalars),
-            "max": np.max(scalars),
+            "min": np.nanmin(scalars),
+            "max": np.nanmax(scalars),
             "step": step,
             "time": time,
         }

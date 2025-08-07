@@ -27,8 +27,8 @@ class PlotTrussResponse(PlotTrussResponseBase, PlotResponsePyvistaBase):
         info = {
             "title": "Truss",
             "resp_type": self.resp_type.capitalize(),
-            "min": np.min(scalars),
-            "max": np.max(scalars),
+            "min": np.nanmin(scalars),
+            "max": np.nanmax(scalars),
             "step": step,
             "time": time,
         }

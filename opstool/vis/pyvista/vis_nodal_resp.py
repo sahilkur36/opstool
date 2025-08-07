@@ -15,7 +15,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         super().__init__(model_info_steps, node_resp_steps, model_update)
 
     def _make_title(self, step, time):
-        max_norm, min_norm = np.max(self.resps_norm[step]), np.min(self.resps_norm[step])
+        max_norm, min_norm = np.nanmax(self.resps_norm[step]), np.nanmin(self.resps_norm[step])
         title = "Nodal Responses"
         if self.resp_type == "disp":
             resp_type = "Displacement"

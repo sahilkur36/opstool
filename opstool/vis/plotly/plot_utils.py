@@ -24,7 +24,7 @@ default_cmap = [
 default_cmap = [[1.0 - x[0], x[1]] for x in default_cmap[::-1]]
 
 
-class _PLOT_ARGS_TYPES1(TypedDict):
+class _PLOT_ARGS_TYPES1(TypedDict, total=False):
     point_size: float
     line_width: float
     theme: str
@@ -41,7 +41,7 @@ class _PLOT_ARGS_TYPES1(TypedDict):
     cmap_model: list | None | str  # or str for named colorscale, default is None
 
 
-class _PLOT_ARGS_TYPES2(TypedDict):
+class _PLOT_ARGS_TYPES2(TypedDict, total=False):
     point: str
     frame: str
     beam: str

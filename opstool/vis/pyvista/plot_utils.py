@@ -28,7 +28,7 @@ _scalar_bar_kargs = {
 }
 
 
-class _PLOT_ARGS_TYPES1(TypedDict):
+class _PLOT_ARGS_TYPES1(TypedDict, total=False):
     point_size: float
     line_width: float
     theme: str
@@ -57,7 +57,7 @@ class _PLOT_ARGS_TYPES1(TypedDict):
     cmap_model: list | None | str  # or str for named colorscale, default is None
 
 
-class _PLOT_ARGS_TYPES2(TypedDict):
+class _PLOT_ARGS_TYPES2(TypedDict, total=False):
     point: str | list[int]
     frame: str | list[int]
     beam: str | list[int]

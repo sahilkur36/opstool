@@ -23,7 +23,7 @@ def suppress_ops_print(verbose=False):
     yield
 
 
-class _kargs_types(TypedDict):
+class _kargs_types(TypedDict, total=False):
     testType: Literal[
         "EnergyIncr",
         "NormDispIncr",

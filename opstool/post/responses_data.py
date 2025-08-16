@@ -25,7 +25,7 @@ from .eigen_data import save_eigen_data
 from .model_data import save_model_data
 
 
-class _POST_ARGS_TYPES(TypedDict):
+class _POST_ARGS_TYPES(TypedDict, total=False):
     elastic_frame_sec_points: int
     compute_mechanical_measures: bool
     project_gauss_to_nodes: Optional[str]
@@ -40,7 +40,7 @@ class _POST_ARGS_TYPES(TypedDict):
     save_plane_resp: bool
     save_brick_resp: bool
     save_contact_resp: bool
-    save_sensitivity_resp: bool = False
+    save_sensitivity_resp: bool
     # -------------------------------------------
     node_tags: Optional[Union[list, tuple, int]]
     frame_tags: Optional[Union[list, tuple, int]]
@@ -530,7 +530,7 @@ def loadODB(obd_tag, resp_type: str = "Nodal", verbose: bool = True):
     return model_info_steps, model_update, resp_step
 
 
-def get_model_data(odb_tag: Optional[int] = None, data_type: str = "Nodal", from_responses: bool = False):
+def get_model_data(odb_tag: Optional[Union[int, str]] = None, data_type: str = "Nodal", from_responses: bool = False):
     """Read model data from a file.
 
     Parameters
@@ -592,7 +592,7 @@ def get_model_data(odb_tag: Optional[int] = None, data_type: str = "Nodal", from
 
 
 def get_nodal_responses(
-    odb_tag: int,
+    odb_tag: Union[int, str],
     resp_type: Optional[str] = None,
     node_tags: Optional[Union[list, tuple, int]] = None,
     print_info: bool = True,
@@ -665,7 +665,7 @@ def get_nodal_responses(
 
 
 def get_element_responses(
-    odb_tag: int,
+    odb_tag: Union[int, str],
     ele_type: str,
     resp_type: Optional[str] = None,
     ele_tags: Optional[Union[list, tuple, int]] = None,
@@ -804,7 +804,7 @@ def get_element_responses(
 
 
 def get_sensitivity_responses(
-    odb_tag: int,
+    odb_tag: Union[int, str],
     resp_type: Optional[str] = None,
     print_info: bool = True,
 ) -> xr.Dataset:

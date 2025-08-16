@@ -316,10 +316,10 @@ class SmartAnalyze:
         self.analysis_type = analysis_type
         self.eps = 1.0e-12
         if ON_NOTEBOOK:
-            self.logo = "SmartAnalyze::"
+            self.logo = "OPSTOOL::SmartAnalyze::"
         else:
-            self.logo = "[bold magenta]SmartAnalyze::[/bold magenta]"
-        self.logo_progress = "[bold magenta]SmartAnalyze"
+            self.logo = "[bold magenta]OPSTOOL::SmartAnalyze::[/bold magenta]"
+        self.logo_progress = "[bold magenta]OPSTOOL::SmartAnalyze"
         self.logo_analysis_type = f"[bold cerulean]{self.analysis_type}"
 
         self.debug_mode = self.control_args["debugMode"]
@@ -540,16 +540,18 @@ class SmartAnalyze:
         if ON_NOTEBOOK:
             time_val = f"{self._get_time():.3f}"
             if success:
-                print(f"🎉 {self.logo} Successfully finished! Time consumption: {time_val} s. 🎉")
+                print(f">>> 🎉 {self.logo} Successfully finished! Time consumption: {time_val} s. 🎉")
             else:
-                print(f":x: {self.logo} Analyze failed. Time consumption: {time_val} s.")
+                print(f">>> ❌ {self.logo} Analyze failed. Time consumption: {time_val} s.")
         else:
             color = get_random_color()
             time_val = f"[bold {color}]{self._get_time():.3f}[/bold {color}]"
             if success:
-                rprint(f"🎉 {self.logo} [{color}]Successfully finished[/{color}]! Time consumption: {time_val} s. 🎉")
+                rprint(
+                    f">>> 🎉 {self.logo} [{color}]Successfully finished[/{color}]! Time consumption: {time_val} s. 🎉"
+                )
             else:
-                rprint(f":x: {self.logo} Analyze failed. Time consumption: {time_val} s.")
+                rprint(f">>> ❌ {self.logo} Analyze failed. Time consumption: {time_val} s.")
 
     def _print_progress(self):
         prog = self.current_args["progress"]
@@ -607,10 +609,10 @@ class SmartAnalyze:
             if norm[-1] < self.control_args["normTol"]:
                 if verbose:
                     if ON_NOTEBOOK:
-                        print(f">>> ▶️ {self.logo} Adding test times to {num}.")
+                        print(f">>> ✳️ {self.logo} Adding test times to {num}.")
                     else:
                         color = get_random_color()
-                        rprint(f">>> ▶️ {self.logo} Adding test times to [bold {color}]{num}[/bold {color}].")
+                        rprint(f">>> ✳️ {self.logo} Adding test times to [bold {color}]{num}[/bold {color}].")
                 ops.test(
                     self.control_args["testType"], self.control_args["testTol"], num, self.control_args["testPrintFlag"]
                 )
@@ -622,11 +624,11 @@ class SmartAnalyze:
             else:
                 if verbose:
                     if ON_NOTEBOOK:
-                        print(f">>> ▶️ {self.logo} Not adding test times for norm {norm[-1]:.3e}.")
+                        print(f">>> ✳️ {self.logo} Not adding test times for norm {norm[-1]:.3e}.")
                     else:
                         color = get_random_color()
                         rprint(
-                            f">>> ▶️ {self.logo} Not adding test times for norm [bold {color}]%.3e[/bold {color}]."
+                            f">>> ✳️ {self.logo} Not adding test times for norm [bold {color}]%.3e[/bold {color}]."
                             % (norm[-1])
                         )
         # goback
@@ -644,10 +646,10 @@ class SmartAnalyze:
         for algo_flag in self.control_args["algoTypes"][1:]:
             if verbose:
                 if ON_NOTEBOOK:
-                    print(f">>> ▶️ {self.logo} Setting algorithm to {algo_flag}.")
+                    print(f">>> ✳️ {self.logo} Setting algorithm to {algo_flag}.")
                 else:
                     color = get_random_color()
-                    rprint(f">>> ▶️ {self.logo} Setting algorithm to [bold {color}]{algo_flag}[/bold {color}].")
+                    rprint(f">>> ✳️ {self.logo} Setting algorithm to [bold {color}]{algo_flag}[/bold {color}].")
             self._setAlgorithm(algo_flag, self.control_args["UserAlgoArgs"], verbose=self.debug_mode)
             ok = self._analyze_one_step(step, verbose=verbose)
             if ok == 0:
@@ -667,12 +669,12 @@ class SmartAnalyze:
         if verbose:
             if ON_NOTEBOOK:
                 print(
-                    f">>> ▶️ {self.logo} Dividing the current step {step:.3e} into {step_try:.3e} and {step - step_try:.3e}"
+                    f">>> ✳️ {self.logo} Dividing the current step {step:.3e} into {step_try:.3e} and {step - step_try:.3e}"
                 )
             else:
                 color = get_random_color()
                 rprint(
-                    f">>> ▶️ {self.logo} Dividing the current step [bold {color}]{step:.3e}[/bold {color}] "
+                    f">>> ✳️ {self.logo} Dividing the current step [bold {color}]{step:.3e}[/bold {color}] "
                     f"into [bold {color}]{step_try:.3e}[/bold {color}] and [bold {color}]{step - step_try:.3e}[/bold {color}]"
                 )
 
@@ -680,11 +682,11 @@ class SmartAnalyze:
         while step_remaining > self.eps:
             if step_try < min_step:
                 if ON_NOTEBOOK:
-                    print(f">>> ▶️ {self.logo} Current step {step_try:.3e} is below the min step {min_step:.3e}.")
+                    print(f">>> ✳️ {self.logo} Current step {step_try:.3e} is below the min step {min_step:.3e}.")
                 else:
                     color = get_random_color()
                     rprint(
-                        f">>> ▶️ {self.logo} Current step [bold {color}]{step_try:.3e}[/bold {color}] is below the min step "
+                        f">>> ✳️ {self.logo} Current step [bold {color}]{step_try:.3e}[/bold {color}] is below the min step "
                         f"[bold {color}]{min_step:.3e}[/bold {color}]."
                     )
                 return -1
@@ -702,14 +704,14 @@ class SmartAnalyze:
                 if verbose:
                     if ON_NOTEBOOK:
                         print(
-                            f">>> ▶️ {self.logo} Current total step size {step:.3e}, "
+                            f">>> ✳️ {self.logo} Current total step size {step:.3e}, "
                             f"completed sub-step size {step - step_remaining:.3e}, "
                             f"remaining sub-step size {step_remaining:.3e}"
                         )
                     else:
                         color = get_random_color()
                         rprint(
-                            f">>> ▶️ {self.logo} Current total step size [bold {color}]{step}[/bold {color}], "
+                            f">>> ✳️ {self.logo} Current total step size [bold {color}]{step}[/bold {color}], "
                             f"completed sub-step size [bold {color}]{step - step_remaining}[/bold {color}], "
                             f"remaining sub-step size [bold {color}]{step_remaining}[/bold {color}]"
                         )
@@ -718,13 +720,13 @@ class SmartAnalyze:
                 if verbose:
                     if ON_NOTEBOOK:
                         print(
-                            f">>> ▶️ {self.logo} Dividing the current step {step_try / alpha:.3e} into "
+                            f">>> ✳️ {self.logo} Dividing the current step {step_try / alpha:.3e} into "
                             f"{step_try:.3e} and {step_try / alpha - step_try:.3e}"
                         )
                     else:
                         color = get_random_color()
                         rprint(
-                            f">>> ▶️ {self.logo} Dividing the current step [bold {color}]{step_try / alpha:.3e}[/bold {color}] "
+                            f">>> ✳️ {self.logo} Dividing the current step [bold {color}]{step_try / alpha:.3e}[/bold {color}] "
                             f"into [bold {color}]{step_try:.3e}[/bold {color}] and "
                             f"[bold {color}]{step_try / alpha - step_try:.3e}[/bold {color}]"
                         )
@@ -735,11 +737,11 @@ class SmartAnalyze:
             return -1
         if verbose:
             if ON_NOTEBOOK:
-                print(f">>> ⚠️ {self.logo} Warning: Loosing test tolerance to {self.control_args['looseTestTolTo']}")
+                print(f">>> ❇️ {self.logo} Warning: Loosing test tolerance to {self.control_args['looseTestTolTo']}")
             else:
                 color = get_random_color()
                 rprint(
-                    f">>> ⚠️ {self.logo} Warning: [bold {color}]Loosing test tolerance to "
+                    f">>> ❇️ {self.logo} Warning: [bold {color}]Loosing test tolerance to "
                     f"{self.control_args['looseTestTolTo']}[/bold {color}]"
                 )
         ops.test(
@@ -765,7 +767,7 @@ class SmartAnalyze:
 
     def _setAlgorithm(self, algotype, user_algo_args: Optional[list] = None, verbose=True):
         color = get_random_color()
-        prefix = ">>> ▶️"
+        prefix = ">>> ✳️"
 
         def log_and_call(name, *args):
             if verbose:
@@ -836,4 +838,4 @@ class SmartAnalyze:
             args = algo_map[algotype]
             log_and_call(*args)
         else:
-            raise ValueError(">>> ⚠️ SmartAnalyze: ERROR! WRONG Algorithm Type!")  # noqa: TRY003
+            raise ValueError(">>> ❎ SmartAnalyze: ERROR! WRONG Algorithm Type!")  # noqa: TRY003

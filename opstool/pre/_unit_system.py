@@ -167,6 +167,10 @@ class UnitSystem:
             val = _ratio_time[unit.lower() + "2" + self._time]
             setattr(self, unit, val)
             self._cache[unit] = val
+        # alias
+        self.s = self.sec
+        self.ms = self.msec
+        self.kips = self.kip
         # mass
         self.kg = self.n * (self.sec**2) / self.m
         self.mg, self.g, self.ton = 1e-6 * self.kg, 1e-3 * self.kg, 1e3 * self.kg
@@ -365,6 +369,7 @@ if __name__ == "__main__":
     UNIT.print()
 
     print("MPa", UNIT["MPa"])  # Example of using __getitem__ to get a unit conversion value
+    print("kip*sec^2/inch", UNIT["kip*sec^2/inch"])
 
     # Show some unit conversion effects
     print("Length:", UNIT.mm, UNIT.Mm2, UNIT.cm, UNIT.m, UNIT.M2, UNIT.inch, UNIT.Ft)

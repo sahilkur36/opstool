@@ -357,7 +357,10 @@ class SmartAnalyze:
 
     def _stop_progress_bar(self):
         if self.progress is not None:
+            self.progress.total = self.progress.n
+            self.progress.refresh()
             self.progress.close()
+            print(f"Note: OpenSees LogFile has been generated in {LOG_FILE}.")
         self.progress = None
 
     def transient_split(self, npts: int):
@@ -767,16 +770,16 @@ class SmartAnalyze:
 
     def _setAlgorithm(self, algotype, user_algo_args: Optional[list] = None, verbose=True):
         color = get_random_color()
-        prefix = ">>> ✳️"
+        prefix = ">>> ✳️ "
 
         def log_and_call(name, *args):
             if verbose:
                 arg_str = " ".join(str(a) for a in args)
                 if ON_NOTEBOOK:
-                    print(f"{prefix} {self.logo} Setting algorithm to {name} {arg_str}...")
+                    print(f"{prefix}{self.logo} Setting algorithm to {name} {arg_str}...")
                 else:
                     rprint(
-                        f"{prefix} {self.logo} Setting algorithm to  [bold {color}]{name} {arg_str}...[/bold {color}]"
+                        f"{prefix}{self.logo} Setting algorithm to  [bold {color}]{name} {arg_str}...[/bold {color}]"
                     )
             ops.algorithm(name, *args)
 

@@ -89,7 +89,7 @@ class MomentCurvature:
             The number of repetitions for each cycle., by default 1
 
         .. Note::
-            The total number of cycles is n_cycle * n_hold.
+            The total number of cycles is ``n_cycle * n_hold``.
 
         Returns
         -------
@@ -124,13 +124,11 @@ class MomentCurvature:
             The axes to plot the moment-curvature relationship, by default None.
 
         """
+        lw = 1.0 if self.cycle_path else 2.5
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(10, 10 * 0.618))
-        ax.plot(self.phi, self.M, lw=3, c="blue")
-        ax.set_title(
-            "$M-\\phi$",
-            fontsize=28,
-        )
+        ax.plot(self.phi, self.M, lw=lw, c="blue")
+        ax.set_title("$M-\\phi$", fontsize=28)
         ax.set_xlabel("$\\phi$", fontsize=25)
         ax.set_ylabel("$M$", fontsize=25)
         plt.xticks(fontsize=15)
@@ -463,7 +461,7 @@ def _analyze(
     if P != 0:
         _create_axial_resp(P)
 
-    _setup_load(axis)
+    _setup_pushover_load(axis)
     if cycle and cycle_path is not None:
         max_phi = np.max(np.abs(cycle_path))
 
@@ -473,10 +471,10 @@ def _analyze(
     return results
 
 
-def _setup_load(axis):
+def _setup_pushover_load(axis):
     dof = _get_dof(axis)
-    load = [0] * 6
-    load[dof - 1] = 1
+    load = [0.0] * 6
+    load[dof - 1] = 1.0
     ops.timeSeries("Linear", 2)
     ops.pattern("Plain", 2, 2)
     ops.load(2, *load)
@@ -514,18 +512,22 @@ def _run_protocol_segments(protocol, dof, stop_ratio, smart_analyze, cycle_path,
         RESP.append(_get_fiber_sec_data(ele_tag=1))
         return phi, moment
 
-    def should_stop(phi, moment):
-        flip = (moment - M[-1]) * (phi - PHI[-1]) < 0
-        decay = abs(moment) < max(abs(m) for m in M) * (stop_ratio - 0.02)
-        return (flip and decay) or abs(phi) >= max_phi
+    def should_stop():
+        max_moment = np.max(np.abs(M))
+        flip = (M[-2] - M[-1]) * (PHI[-2] - PHI[-1]) < 0
+        decay = abs(M[-1]) <= max_moment * stop_ratio
+        return (flip and decay) or abs(PHI[-1]) >= max_phi
 
     if smart_analyze:
         analysis = SmartAnalyze(
             analysis_type="Static",
             testType="NormDispIncr",
-            testTol=1e-10,
-            tryAlterAlgoTypes=True,
-            algoTypes=[10, 40],
+            testTol=1e-12,
+            tryAddTestTimes=True,
+            testIterTimes=100,
+            testIterTimesMore=[250, 500, 1000],
+            tryAlterAlgoTypes=False,
+            algoTypes=[40],
             relaxation=0.5,
             minStep=1e-12,
             printPer=1e10,
@@ -533,18 +535,19 @@ def _run_protocol_segments(protocol, dof, stop_ratio, smart_analyze, cycle_path,
         )
         for seg in analysis.static_split(cycle_path if cycle_path else [max_phi], maxStep=protocol[0]):
             ok = analysis.StaticAnalyze(2, dof, seg)
-            phi, moment = record()
-            if should_stop(phi, moment):
+            record()
+            if should_stop():
+                analysis.close()
                 break
             if ok < 0:
+                analysis.close()
                 raise RuntimeError("Analysis failed")  # noqa: TRY003
-        analysis.close()
     else:
         for step in protocol:
             ops.integrator("DisplacementControl", 2, dof, step)
             ok = ops.analyze(1)
-            phi, moment = record()
-            if should_stop(phi, moment):
+            record()
+            if should_stop():
                 break
             if ok < 0:
                 raise RuntimeError("Analysis failed")  # noqa: TRY003

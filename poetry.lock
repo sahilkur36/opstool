@@ -101,7 +101,6 @@ files = [
 [package.dependencies]
 aiohappyeyeballs = ">=2.3.0"
 aiosignal = ">=1.1.2"
-async-timeout = {version = ">=4.0,<6.0", markers = "python_version < \"3.11\""}
 attrs = ">=17.3.0"
 frozenlist = ">=1.1.1"
 multidict = ">=4.5,<7.0"
@@ -151,10 +150,8 @@ files = [
 ]
 
 [package.dependencies]
-exceptiongroup = {version = ">=1.0.2", markers = "python_version < \"3.11\""}
 idna = ">=2.8"
 sniffio = ">=1.1"
-typing-extensions = {version = ">=4.1", markers = "python_version < \"3.11\""}
 
 [package.extras]
 doc = ["Sphinx (>=7.4,<8.0)", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
@@ -265,9 +262,6 @@ files = [
     {file = "astroid-3.3.5.tar.gz", hash = "sha256:5cfc40ae9f68311075d27ef68a4841bdc5cc7f6cf86671b49f00607d30188e2d"},
 ]
 
-[package.dependencies]
-typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.11\""}
-
 [[package]]
 name = "asttokens"
 version = "2.4.1"
@@ -297,22 +291,6 @@ groups = ["dev"]
 files = [
     {file = "async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627"},
     {file = "async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224"},
-]
-
-[package.dependencies]
-typing-extensions = {version = ">=4.0.0", markers = "python_version < \"3.11\""}
-
-[[package]]
-name = "async-timeout"
-version = "5.0.1"
-description = "Timeout context manager for asyncio programs"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "python_version < \"3.11\""
-files = [
-    {file = "async_timeout-5.0.1-py3-none-any.whl", hash = "sha256:39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"},
-    {file = "async_timeout-5.0.1.tar.gz", hash = "sha256:d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3"},
 ]
 
 [[package]]
@@ -893,9 +871,6 @@ files = [
     {file = "coverage-7.6.1.tar.gz", hash = "sha256:953510dfb7b12ab69d20135a0662397f077c59b1e6379a768e97c59d852ee51d"},
 ]
 
-[package.dependencies]
-tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.11.0a6\" and extra == \"toml\""}
-
 [package.extras]
 toml = ["tomli ; python_full_version <= \"3.11.0a6\""]
 
@@ -1025,7 +1000,6 @@ files = [
 [package.dependencies]
 click = ">=8.0.0,<9"
 colorama = {version = ">=0.4.6", markers = "sys_platform == \"win32\""}
-tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 
 [[package]]
 name = "distlib"
@@ -1050,22 +1024,6 @@ files = [
     {file = "docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2"},
     {file = "docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f"},
 ]
-
-[[package]]
-name = "exceptiongroup"
-version = "1.2.2"
-description = "Backport of PEP 654 (exception groups)"
-optional = false
-python-versions = ">=3.7"
-groups = ["main", "dev"]
-markers = "python_version < \"3.11\""
-files = [
-    {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
-    {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
-]
-
-[package.extras]
-test = ["pytest (>=6)"]
 
 [[package]]
 name = "executing"
@@ -1583,7 +1541,6 @@ files = [
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
 decorator = "*"
-exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
 jedi = ">=0.16"
 matplotlib-inline = "*"
 pexpect = {version = ">4.3", markers = "sys_platform != \"win32\" and sys_platform != \"emscripten\""}
@@ -1986,7 +1943,6 @@ jupyterlab-server = ">=2.27.1,<3"
 notebook-shim = ">=0.2"
 packaging = "*"
 setuptools = ">=40.1.0"
-tomli = {version = ">=1.2.2", markers = "python_version < \"3.11\""}
 tornado = ">=6.2.0"
 traitlets = "*"
 
@@ -2737,9 +2693,6 @@ files = [
     {file = "multidict-6.1.0.tar.gz", hash = "sha256:22ae2ebf9b0c69d206c003e2f6a914ea33f0a932d4aa16f236afc049d9958f4a"},
 ]
 
-[package.dependencies]
-typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.11\""}
-
 [[package]]
 name = "mypy"
 version = "1.11.2"
@@ -2779,7 +2732,6 @@ files = [
 
 [package.dependencies]
 mypy-extensions = ">=1.0.0"
-tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = ">=4.6.0"
 
 [package.extras]
@@ -3152,7 +3104,6 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
     {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
@@ -3435,118 +3386,6 @@ files = [
     {file = "ply-3.11-py2.py3-none-any.whl", hash = "sha256:096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce"},
     {file = "ply-3.11.tar.gz", hash = "sha256:00c7c1aaa88358b9c765b6d3000c6eec0ba42abca5351b095321aef446081da3"},
 ]
-
-[[package]]
-name = "polyscope"
-version = "2.4.0"
-description = "Polyscope: A viewer and user interface for 3D data."
-optional = false
-python-versions = ">=3.7"
-groups = ["main"]
-files = [
-    {file = "polyscope-2.4.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:85a609f94d086809537fc38bfe8a2ad45109a73ebca9560a539cd15f5438c995"},
-    {file = "polyscope-2.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:be264d7598fff2afb7723d82bbcca453922cae8556625585de62094bd51d364f"},
-    {file = "polyscope-2.4.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:56a3614fc685f2c8873ccd4504b4e039d5c2e88ac029c68293e2f0581dd976a5"},
-    {file = "polyscope-2.4.0-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a107fc348b5051610fbafe6789428ff49c43ef2e9b7d40397b889401f231b7a4"},
-    {file = "polyscope-2.4.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:01a47e4b2516c9934247aa3c402ef07536e9c5de93ce57648af8b18d4a67e78d"},
-    {file = "polyscope-2.4.0-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:048f7f1a99d9cfaa246b42f7211d3c75aca79417676eaf8ffcc1a1bed662bdfd"},
-    {file = "polyscope-2.4.0-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:f33c477ea23dce748753e792c8e036d3954dd226e23b75801dd8f3250f377319"},
-    {file = "polyscope-2.4.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:64585df2cb2182e83aad210fab0be501711869bf084b9d7a652155e7b1e9cacc"},
-    {file = "polyscope-2.4.0-cp310-cp310-win32.whl", hash = "sha256:af285d473f6de078178de3f25722426d918bec4838c739bd3295ee80d94f8d22"},
-    {file = "polyscope-2.4.0-cp310-cp310-win_amd64.whl", hash = "sha256:ff08bc6966dab6b80a0807ef06dabd1267b57a0b477c894184eac6461cb8c849"},
-    {file = "polyscope-2.4.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:3afc76d744dfdbe7a42279bc5645b271ff222df8c4e4520d1accd0029bb8c87e"},
-    {file = "polyscope-2.4.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:81fc39064c9287630e5efea1b4851fe6ade69156f32a9035c3c8632439330342"},
-    {file = "polyscope-2.4.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a9ad31d4f6031044f6729a56d619ea9a539437bebd284777b0dfee9b45238d36"},
-    {file = "polyscope-2.4.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ef1cd98eb8eb41b485df835d542e56a20c72c400c5221288ddde6659493cda03"},
-    {file = "polyscope-2.4.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:00d19cb3f841a436278760023eaaf50db4a0c04819cadc71ea35d9e9ebb605b5"},
-    {file = "polyscope-2.4.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:e5e991f814a7a766b3d89f51980489c3561f48dc18a0dd739464558dc539234e"},
-    {file = "polyscope-2.4.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:39619cb4c1c612d5d8b9fb44d35b0fa057a1a3bb177114c661a4ba2e2bed2c5c"},
-    {file = "polyscope-2.4.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:c2d6e545a117b7d7a224256c20ad50f96a3e6c3f00057601ecd8b3f7e219a0cf"},
-    {file = "polyscope-2.4.0-cp311-cp311-win32.whl", hash = "sha256:062136bfdc418a36be4b4ee2298a772b4b6f7eeb01ecdf57c6e4c2f8bb56bcd9"},
-    {file = "polyscope-2.4.0-cp311-cp311-win_amd64.whl", hash = "sha256:822fe685fd4a2547811d207c04102688f6d7bc7606be1d0f60c09b5d96126831"},
-    {file = "polyscope-2.4.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:f1ec528a1142a36993a8edf2e9ab17a8fc87395bdfae354c6b8e97060f4dd743"},
-    {file = "polyscope-2.4.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:3da1d23a37d1e4530b3ca5aa88fa75dd113d6db4d66d92e7c3d3f7576b565c31"},
-    {file = "polyscope-2.4.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:14fee9e1dc705fec0409d6a22a8fbc0bc59cad1b9dacd533439bc4238873c58e"},
-    {file = "polyscope-2.4.0-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:17a298329f3d592f084600bb68adb2e7b22046f67a7edfa8e3031881bd99c941"},
-    {file = "polyscope-2.4.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2295582f5fc911ac162998a4082b8fc83a580cc98aaa86b3bc62bbf20387c00"},
-    {file = "polyscope-2.4.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:6bfbf26650d624492c9ef34c0356f1ebd020c4f0956b596ad25c37184055cc48"},
-    {file = "polyscope-2.4.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:0694c4b6b4c27fda92fc1e69f81a3059d56e7b35bcc9d3cd944f3115059a1f0e"},
-    {file = "polyscope-2.4.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3be7a347ef51b312eb22df714d0bbd8d9be886cc0718104b6edab78edc82b8d3"},
-    {file = "polyscope-2.4.0-cp312-cp312-win32.whl", hash = "sha256:61812b2a9e37872f69c5b883b999c2c40416813b34cb61b322a1f149769c2a46"},
-    {file = "polyscope-2.4.0-cp312-cp312-win_amd64.whl", hash = "sha256:2a8449db618504928b4fcfb3ec42c14ddbed49ab5074363c6889c0445efeeb58"},
-    {file = "polyscope-2.4.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:206759f6ff12a2d0cad16b5b9d84d43dba0e0b20dda27090d278918d8572c40c"},
-    {file = "polyscope-2.4.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:535c117f14c860d061648e7acaeea157676fcab4eb57fd2ce999125741afec0f"},
-    {file = "polyscope-2.4.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:910c8efc51ab011469c8802acf500953de0c0ee3cbdcc3419f09485c6660b501"},
-    {file = "polyscope-2.4.0-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e53d5085537333f670d439723a4b4dd199ed62b4833b29b44d9afa0b4517550b"},
-    {file = "polyscope-2.4.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5e82eb957415614f068766566eaf70e1d45fc958df6bce213e46b28a86f9c20b"},
-    {file = "polyscope-2.4.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:a65f54a7d5ee1aa6ecb42b8867e97df96b4d66dfac2761b73d77868d3ed8bd39"},
-    {file = "polyscope-2.4.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:ec155e0fee88f2b0e2d5d41f32510c05282fcd0c21bd4dde3c2c252783ed42d3"},
-    {file = "polyscope-2.4.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a919b3e05f49ee7950d746013d3d02694a32e9d8f81e5846f682baea447e8b78"},
-    {file = "polyscope-2.4.0-cp313-cp313-win32.whl", hash = "sha256:7ab15ca0fff8f880ee625eaa3677fe79dec3535918579673e0c614d77a607d2e"},
-    {file = "polyscope-2.4.0-cp313-cp313-win_amd64.whl", hash = "sha256:95c12276f3bed9f71c79bc6105750ce4c5e75916a7baffb6e15d97065a32af97"},
-    {file = "polyscope-2.4.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:46d294c2502e4f19fa909dca78ad0b6154be5272191c470e5f8cf9d8c96822d4"},
-    {file = "polyscope-2.4.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a105949bd2fd7eb12858a094d09eb427a4dbee3b6a41f7c03130a7602de5d0b8"},
-    {file = "polyscope-2.4.0-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:19c5580ed96997e64a77649e50402ea89e04847adaa589b1ad0797acc1dcd191"},
-    {file = "polyscope-2.4.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a421fc9c456da0d6eb005d44051f5b6f93be22240679353c502556af3423f91f"},
-    {file = "polyscope-2.4.0-cp37-cp37m-musllinux_1_2_aarch64.whl", hash = "sha256:59d128ab59b9b63439c0bded1585f17d98073e7a6e9b5d3615132dc3b4615d24"},
-    {file = "polyscope-2.4.0-cp37-cp37m-musllinux_1_2_i686.whl", hash = "sha256:ef7183adbd079707478dd7861fd48a69984015d991ecdc94a70a87ca81e11207"},
-    {file = "polyscope-2.4.0-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:3e80ede2c30a38dd698a049c01d2b6631439d8873306dd741389313075aab372"},
-    {file = "polyscope-2.4.0-cp37-cp37m-win32.whl", hash = "sha256:91c37eb115f90a5b9cc6477fca1087c5e826faaeab8c8244a0300f99ea1ee485"},
-    {file = "polyscope-2.4.0-cp37-cp37m-win_amd64.whl", hash = "sha256:25a2b573c1f6955e207882047178d9a592e062953e46f7943074787b8d86719b"},
-    {file = "polyscope-2.4.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:37910b731257771ee2acc718d0be1b96101551c458e318526ba7d00adbdd1da2"},
-    {file = "polyscope-2.4.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:f8b5a7a456b5cdcd7904f4fec04a9e9e3860bbd6a6d1fdd0c542d6b553384eab"},
-    {file = "polyscope-2.4.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f68a781329ad6d57361759221d2e0ff672050b2bba3d293ae0f3c3777f31221a"},
-    {file = "polyscope-2.4.0-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9de7088f76979b352113817362915b75ce501cf7e08bb5e1fb8be015ca2ccfab"},
-    {file = "polyscope-2.4.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0ff395c008e0109abfcd6b75eded5b1ccce227f1b0578fab60bacc3f7d0a1af3"},
-    {file = "polyscope-2.4.0-cp38-cp38-musllinux_1_2_aarch64.whl", hash = "sha256:2390425183c1ce6f1536e17efe337d42424ba52550bfc97ca4b35b37d387fa84"},
-    {file = "polyscope-2.4.0-cp38-cp38-musllinux_1_2_i686.whl", hash = "sha256:3cb7a0d3cda13d6fdd979e5b5098d25425be62590639d99903193cf5982b5f3a"},
-    {file = "polyscope-2.4.0-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:e76e8a0278bd59141664c1222b71839e1dad8e6eb14c37482f0ce05d52047f65"},
-    {file = "polyscope-2.4.0-cp38-cp38-win32.whl", hash = "sha256:80128fb837beab50c39faf273dab0811907b4b4dbec677d6a7243429305a1b49"},
-    {file = "polyscope-2.4.0-cp38-cp38-win_amd64.whl", hash = "sha256:f2b141b299855cdb9e2d08e2915dc64c2962401b960cd947613fd48593643f41"},
-    {file = "polyscope-2.4.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1afdbc4c863d5eae4294f9c52a63174b4f43ffe227b7b9e4bd07fd7f5f0920fd"},
-    {file = "polyscope-2.4.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f3ea878ef77942f265bd7221858c9a1c477d2a6475e6532f865bbc56a87e64cf"},
-    {file = "polyscope-2.4.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e77e38979321abab6cd3f2aec5392ad7efbcdc6c444912902269775faeed8e38"},
-    {file = "polyscope-2.4.0-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:18ab0adbd6a94780bae5d18b66cec2c8400a0dd1c53a703e7735617105001291"},
-    {file = "polyscope-2.4.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:22050f24ead5aea6ffc2b300730e6f1541e7d8e62dd584b37318e745006358bf"},
-    {file = "polyscope-2.4.0-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:eb37673389ee87882f76937f5e54bb962ed68e55b65509894eaca3e9ca92b9e4"},
-    {file = "polyscope-2.4.0-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:8dedc81890286840a3d34e9d25d5bbd5027abb11b8c93e97684ff23cfc61e040"},
-    {file = "polyscope-2.4.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:b29aff4f31863958cdb4f0eedafc62f6f7e097076023fd27b372f4db389c0a6a"},
-    {file = "polyscope-2.4.0-cp39-cp39-win32.whl", hash = "sha256:ae6fda07b11d963bb6ffbee378311def52290a7dec4022cd3ac4311cb8be72a5"},
-    {file = "polyscope-2.4.0-cp39-cp39-win_amd64.whl", hash = "sha256:7b63673992a60d84df6d9d8434ee6fbf9d6c9e82adb3b278be82f4382a808535"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-macosx_10_15_x86_64.whl", hash = "sha256:58bb133094f57e5d688baab46094f57131b5bb24e04e34dfca31c18d141ba141"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:91937e674408a32a9cacbe894dd85d6db974e7bace6fb33ca1af401515ba4e73"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7dbbbb2834456c72e44858ac08cf7dbf08bbc3d88c7a3d6cb3cc4d3a916df4e2"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:87f3b938ef2d6c57f08290f6481a16b16cbf652737528d6e24693cfcbdade7c5"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:93ffe4a1ded8ab391e56253d4d781e231a281fbaf6831895f3c01b844b542465"},
-    {file = "polyscope-2.4.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:85a95ade85ba8b7bd30269eef372fc91c8c217586561a88447c9009148767ac0"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-macosx_10_15_x86_64.whl", hash = "sha256:74204067e574f91113a0862383c6f34f530b34c9a63d0e6f6c6c9c760a5217b5"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:ecd2ad3e9aa699f8ab7fa4a563af7895f017ebcf4e67e0bb09954894f9123df2"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:45c9a74175658e6be724e4ba45111574d214b2ddd4ebf7023cadf957f089e73e"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:38c3906509ff4b4e2927222e78d8dcd22516c655e7a0268a01ba0b8805c4462f"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3604757491edbf41b8731258639523fbf941c489f8a0bfa9ff26a00e55b5f2eb"},
-    {file = "polyscope-2.4.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:e7f1e9fd4fa149bc070f39e9d7b6dde7994a941a2edaada57835ac7b71075116"},
-    {file = "polyscope-2.4.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:81ef49b77a76db1d11abee112ae3c190380f5f12d4075760207af4feec18a8b0"},
-    {file = "polyscope-2.4.0-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:551a5686c21cab0ed4886d73b2f6b70339b3050f5afa44ff4e03a58bcd158285"},
-    {file = "polyscope-2.4.0-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4a04491dbc95603e757b8592b1905a7f3a56e810b85b23f080f09658de7bbfe9"},
-    {file = "polyscope-2.4.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2a3938b38ac4eb4e7d1af9bb91eca0235be77dc96c18a5f3316d81ce4bc947e7"},
-    {file = "polyscope-2.4.0-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:317f96f96090f5c4aba9c5608d5f31be48086d6e072921bd9d9bacd8f1298775"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:e82598d988ac5492dfa918d6d9956b93166db6c7b071da4bee116755ec52cb02"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-macosx_11_0_arm64.whl", hash = "sha256:088ce8f97c40e061c846bd36ac5e351b0364b85d3edde5076c0ac2a5bcbf43ab"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4951d914c764a6d70ec14f79527d5d93b615392a4c860156a9947915c6f3633b"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6d066b8aaabd25560c29311095cafe55c491c45f1cdb92934a92de83b585f3c1"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ab2ef7ce62129fbc0177cda7e0a0481b51cb097daba819c33894c893fe5bac84"},
-    {file = "polyscope-2.4.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:d5e0bd400fc650271cedc6ce3c51abd15c5539ce7f878249ba8057d8dd1c86ec"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-macosx_10_15_x86_64.whl", hash = "sha256:e40e90c52f2fdd62e7625278852f7c3952002907e78854c1353da734a268afa0"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-macosx_11_0_arm64.whl", hash = "sha256:d9dc14f8d7ec2bec648d8026b61dc09cdab13265df7bb43e0b8faf9f1a8a121c"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b1cb00d5c1c85a26bef7e3e2572481e2bd33d8ad61dcbf56bdbc975165712614"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ffee1f56b13084c68607586afce0c3fce75135f44b7c9772ca78c2f1dda495cf"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:359da0465f52ac0ab8dcddfdb5bae490f6a0022ac1d4f995de96ec6c7a0d75b3"},
-    {file = "polyscope-2.4.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:4006ca20a6ab44e591cee30216def52fe766f87151d903c5932e15d23284b928"},
-    {file = "polyscope-2.4.0.tar.gz", hash = "sha256:acf28c2bb55b56121c4e75c833558c9a7c64be46d59d3b090574493566a12110"},
-]
-
-[package.dependencies]
-numpy = "*"
 
 [[package]]
 name = "pooch"
@@ -3860,7 +3699,6 @@ files = [
 
 [package.dependencies]
 packaging = ">=24.1"
-tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 
 [package.extras]
 docs = ["furo (>=2024.8.6)", "sphinx-autodoc-typehints (>=2.4.1)"]
@@ -3880,11 +3718,9 @@ files = [
 
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
-exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
 packaging = "*"
 pluggy = ">=0.12,<2.0"
-tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
@@ -4422,7 +4258,6 @@ files = [
 ipywidgets = {version = ">=7.5.1,<9", optional = true, markers = "extra == \"jupyter\""}
 markdown-it-py = ">=2.2.0"
 pygments = ">=2.13.0,<3.0.0"
-typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
@@ -4808,7 +4643,6 @@ sphinxcontrib-htmlhelp = ">=2.0.6"
 sphinxcontrib-jsmath = ">=1.0.1"
 sphinxcontrib-qthelp = ">=1.0.6"
 sphinxcontrib-serializinghtml = ">=1.1.9"
-tomli = {version = ">=2", markers = "python_version < \"3.11\""}
 
 [package.extras]
 docs = ["sphinxcontrib-websupport"]
@@ -5188,19 +5022,6 @@ doc = ["sphinx", "sphinx_rtd_theme"]
 test = ["pytest", "ruff"]
 
 [[package]]
-name = "tomli"
-version = "2.0.2"
-description = "A lil' TOML parser"
-optional = false
-python-versions = ">=3.8"
-groups = ["dev"]
-markers = "python_version < \"3.11\""
-files = [
-    {file = "tomli-2.0.2-py3-none-any.whl", hash = "sha256:2ebe24485c53d303f690b0ec092806a085f07af5a5aa1464f3931eec36caaa38"},
-    {file = "tomli-2.0.2.tar.gz", hash = "sha256:d46d457a85337051c36524bc5349dd91b1877838e2979ac5ced3e710ed8a60ed"},
-]
-
-[[package]]
 name = "tornado"
 version = "6.4.1"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -5242,13 +5063,33 @@ packaging = ">=24.1"
 platformdirs = ">=4.3.6"
 pluggy = ">=1.5"
 pyproject-api = ">=1.8"
-tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
-typing-extensions = {version = ">=4.12.2", markers = "python_version < \"3.11\""}
 virtualenv = ">=20.26.6"
 
 [package.extras]
 docs = ["furo (>=2024.8.6)", "sphinx (>=8.0.2)", "sphinx-argparse-cli (>=1.18.2)", "sphinx-autodoc-typehints (>=2.4.4)", "sphinx-copybutton (>=0.5.2)", "sphinx-inline-tabs (>=2023.4.21)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=24.8)"]
 testing = ["build[virtualenv] (>=1.2.2)", "covdefaults (>=2.3)", "detect-test-pollution (>=1.2)", "devpi-process (>=1.0.2)", "diff-cover (>=9.2)", "distlib (>=0.3.8)", "flaky (>=3.8.1)", "hatch-vcs (>=0.4)", "hatchling (>=1.25)", "psutil (>=6)", "pytest (>=8.3.3)", "pytest-cov (>=5)", "pytest-mock (>=3.14)", "pytest-xdist (>=3.6.1)", "re-assert (>=1.1)", "setuptools (>=75.1)", "time-machine (>=2.15) ; implementation_name != \"pypy\"", "wheel (>=0.44)"]
+
+[[package]]
+name = "tqdm"
+version = "4.67.1"
+description = "Fast, Extensible Progress Meter"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2"},
+    {file = "tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["nbval", "pytest (>=6)", "pytest-asyncio (>=0.24)", "pytest-cov", "pytest-timeout"]
+discord = ["requests"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
 
 [[package]]
 name = "traitlets"
@@ -5489,7 +5330,6 @@ files = [
 [package.dependencies]
 click = ">=7.0"
 h11 = ">=0.8"
-typing-extensions = {version = ">=4.0", markers = "python_version < \"3.11\""}
 
 [package.extras]
 standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.5.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1) ; sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\"", "watchfiles (>=0.13)", "websockets (>=10.4)"]
@@ -5993,5 +5833,5 @@ propcache = ">=0.2.0"
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.10,<3.13"
-content-hash = "f6b11f13443195ea9ad70eec4bed10eeabcf3bc17012717e1d951399b53db716"
+python-versions = ">=3.11,<3.13"
+content-hash = "d9d3da7154cce9f3ecb0764ebb81eb08c2adfe8a508f51c3fab21f145aeb42fa"

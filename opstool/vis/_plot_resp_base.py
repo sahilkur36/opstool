@@ -52,20 +52,23 @@ class PlotResponseBase:
             self.unit_factor = factor
 
     def _get_model_da(self, key, idx):
-        dims = self.ModelInfoSteps[key].dims
-        if self.ModelUpdate:
-            da = self.ModelInfoSteps[key].isel(time=idx)
-            da = da.dropna(dim=dims[1], how="any")
-        else:
-            da = self.ModelInfoSteps[key].isel(time=0)
-        # tags = da.coords[dims[1]].values
-        return da.copy()
+        if key in self.ModelInfoSteps:
+            dims = self.ModelInfoSteps[key].dims
+            if self.ModelUpdate:
+                da = self.ModelInfoSteps[key].isel(time=idx)
+                da = da.dropna(dim=dims[1], how="any")
+            else:
+                da = self.ModelInfoSteps[key].isel(time=0)
+            # tags = da.coords[dims[1]].values
+            return da.copy()
+        return xr.DataArray([], name=key)
 
     def _get_node_da(self, idx):
         nodal_data = self._get_model_da("NodalData", idx)
-        unused_node_tags = nodal_data.attrs["unusedNodeTags"]
-        if len(unused_node_tags) > 0:
-            nodal_data = nodal_data.where(~nodal_data.coords["nodeTags"].isin(unused_node_tags), drop=True)
+        if len(nodal_data) > 0:
+            unused_node_tags = nodal_data.attrs["unusedNodeTags"]
+            if len(unused_node_tags) > 0:
+                nodal_data = nodal_data.where(~nodal_data.coords["nodeTags"].isin(unused_node_tags), drop=True)
         return nodal_data
 
     def _get_line_da(self, idx):

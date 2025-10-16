@@ -16,19 +16,22 @@ SHAPE_MAP = CONFIGS.get_shape_map()
 
 class PlotEigenBase(PlotResponsePyvistaBase):
     def __init__(self, model_info, modal_props, eigen_vectors):
-        self.nodal_data = model_info["NodalData"]
-        self.nodal_tags = self.nodal_data.coords["nodeTags"]
-        self.points = self.nodal_data.to_numpy()
-        self.ndims = self.nodal_data.attrs["ndims"]
-        self.bounds = self.nodal_data.attrs["bounds"]
-        self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
-        self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
-        self.show_zaxis = not np.max(self.ndims) <= 2
+        self.nodal_data = model_info.get("NodalData", [])
+        if len(self.nodal_data) > 0:
+            self.nodal_tags = self.nodal_data.coords["nodeTags"]
+            self.points = self.nodal_data.to_numpy()
+            self.ndims = self.nodal_data.attrs["ndims"]
+            self.bounds = self.nodal_data.attrs["bounds"]
+            self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
+            self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
+            self.show_zaxis = not np.max(self.ndims) <= 2
+        else:
+            raise ValueError("Model have no nodal data!")  # noqa: TRY003
         # -------------------------------------------------------------
-        self.line_data = model_info["AllLineElesData"]
+        self.line_data = model_info.get("AllLineElesData", [])
         self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
-        self.unstru_data = model_info["UnstructuralData"]
+        self.unstru_data = model_info.get("UnstructuralData", [])
         self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
         # --------------------------------------------------
         self.pargs = PLOT_ARGS

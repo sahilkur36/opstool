@@ -95,6 +95,7 @@ class CreateODB:
     ------------
     odb_tag: Union[int, str], default: 1
         Tag of output databases (ODB) to be saved.
+        This tag can be used to identify the load case and is used in post-processing and visualization to identify which results are processed.
     model_update: bool, default: False
         Whether to update the model data.
 
@@ -458,7 +459,7 @@ class CreateODB:
             for resp in self._get_resp():
                 if resp is not None:
                     resp.add_to_datatree(dt)
-            dt.to_zarr(filename, mode="w", consolidated=False, zarr_format=2)
+            dt.to_zarr(filename, mode="w", consolidated=False)
 
     def _save_response_nc(self, filename, zlib=False):
         """Save response data to a NetCDF file."""
@@ -603,6 +604,8 @@ def get_model_data(odb_tag: Optional[Union[int, str]] = None, data_type: str = "
     else:
         filename = f"{RESULTS_DIR}/" + f"{MODEL_FILE_NAME}-{odb_tag}.nc"
         with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+            if data_type not in dt["ModelInfo"]:
+                raise ValueError(f"Data type {data_type} not found in model data.")  # noqa: TRY003
             data = dt["ModelInfo"][data_type][data_type]
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Loading {data_type} data from [bold {color}]{filename}[/] ...")

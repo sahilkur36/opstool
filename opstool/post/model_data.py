@@ -25,17 +25,17 @@ class GetFEMData(FEMData):
                 coords={"nodeTags": self.node_tags, "coords": ["x", "y", "z"]},
                 dims=["nodeTags", "coords"],
             )
+            node_data.name = "NodalData"
+            node_data.attrs = {
+                "bounds": self.bounds,  # must tuple
+                "numNodes": len(self.node_tags),
+                "minBoundSize": self.min_bound,
+                "maxBoundSize": self.max_bound,
+                "ndofs": tuple(self.node_ndofs),
+                "ndims": tuple(self.node_ndims),
+            }
         else:
-            node_data = xr.DataArray(self.node_coords)
-        node_data.name = "NodalData"
-        node_data.attrs = {
-            "bounds": self.bounds,  # must tuple
-            "numNodes": len(self.node_tags),
-            "minBoundSize": self.min_bound,
-            "maxBoundSize": self.max_bound,
-            "ndofs": tuple(self.node_ndofs),
-            "ndims": tuple(self.node_ndims),
-        }
+            node_data = None
         return node_data
 
     def get_node_fixed_data(self):
@@ -61,9 +61,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["nodeTags", "info"],
             )
+            fixed_nodes.name = "FixedNodalData"
         else:
-            fixed_nodes = xr.DataArray(self.fixed_coords)
-        fixed_nodes.name = "FixedNodalData"
+            fixed_nodes = None
         return fixed_nodes
 
     def get_nodal_load_data(self):
@@ -78,9 +78,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["PatternNodeTags", "loadData"],
             )
+            node_load_data.name = "NodalLoadData"
         else:
-            node_load_data = xr.DataArray(self.node_load_data)
-        node_load_data.name = "NodalLoadData"
+            node_load_data = None
         return node_load_data
 
     def get_ele_load_data(self):
@@ -106,9 +106,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["PatternEleTags", "loadData"],
             )
+            ele_load_data.name = "EleLoadData"
         else:
-            ele_load_data = xr.DataArray(self.ele_load_data)
-        ele_load_data.name = "EleLoadData"
+            ele_load_data = None
         return ele_load_data
 
     def get_mp_constraint_data(self):
@@ -137,9 +137,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["nodeTags", "info"],
             )
+            mp_constraint.name = "MPConstraintData"
         else:
-            mp_constraint = xr.DataArray(self.mp_cells)
-        mp_constraint.name = "MPConstraintData"
+            mp_constraint = None
         return mp_constraint
 
     def get_truss_data(self):
@@ -149,9 +149,9 @@ class GetFEMData(FEMData):
                 coords={"cells": ["numNodes", "nodeI", "nodeJ"], "eleTags": self.truss_tags},
                 dims=["eleTags", "cells"],
             )
+            truss.name = "TrussData"
         else:
-            truss = xr.DataArray(self.truss_cells)
-        truss.name = "TrussData"
+            truss = None
         return truss
 
     def get_links_data(self):
@@ -190,9 +190,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["eleTags", "info"],
             )
+            links.name = "LinkData"
         else:
-            links = xr.DataArray(self.link_cells)
-        links.name = "LinkData"
+            links = None
         return links
 
     def get_beams_data(self):
@@ -231,9 +231,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["eleTags", "info"],
             )
+            beams.name = "BeamData"
         else:
-            beams = xr.DataArray(self.beam_cells)
-        beams.name = "BeamData"
+            beams = None
         return beams
 
     def get_all_lines_data(self):
@@ -243,9 +243,9 @@ class GetFEMData(FEMData):
                 coords={"cells": ["numNodes", "nodeI", "nodeJ"], "eleTags": self.all_line_tags},
                 dims=["eleTags", "cells"],
             )
+            lines.name = "AllLineElesData"
         else:
-            lines = xr.DataArray(self.all_line_cells)
-        lines.name = "AllLineElesData"
+            lines = None
         return lines
 
     def get_shell_data(self):
@@ -260,9 +260,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["eleTags", "cells"],
             )
+            shell.name = "ShellData"
         else:
-            shell = xr.DataArray(self.shell_cells)
-        shell.name = "ShellData"
+            shell = None
         return shell
 
     def get_plane_date(self):
@@ -274,9 +274,9 @@ class GetFEMData(FEMData):
                 coords={"eleTags": self.plane_tags},
                 dims=["eleTags", "cells"],
             )
+            plane.name = "PlaneData"
         else:
-            plane = xr.DataArray(self.plane_cells)
-        plane.name = "PlaneData"
+            plane = None
         return plane
 
     def get_brick_data(self):
@@ -284,9 +284,9 @@ class GetFEMData(FEMData):
             cell_types = np.reshape(self.brick_cells_type, (-1, 1))
             data = np.hstack([self.brick_cells, cell_types])
             brick = xr.DataArray(data, coords={"eleTags": self.brick_tags}, dims=["eleTags", "cells"])
+            brick.name = "BrickData"
         else:
-            brick = xr.DataArray(self.brick_cells)
-        brick.name = "BrickData"
+            brick = None
         return brick
 
     def get_unstru_data(self):
@@ -295,9 +295,9 @@ class GetFEMData(FEMData):
             data = np.hstack([self.unstru_cells, unstru_cells_type])
             names = ["numNodes"] + [f"node{i + 1}" for i in range(data.shape[1] - 2)] + ["cellType"]
             unstru = xr.DataArray(data, coords={"cells": names, "eleTags": self.unstru_tags}, dims=["eleTags", "cells"])
+            unstru.name = "UnstructuralData"
         else:
-            unstru = xr.DataArray(self.unstru_cells)
-        unstru.name = "UnstructuralData"
+            unstru = None
         return unstru
 
     def get_contact_data(self):
@@ -310,9 +310,9 @@ class GetFEMData(FEMData):
                 },
                 dims=["eleTags", "cells"],
             )
+            contact.name = "ContactData"
         else:
-            contact = xr.DataArray(self.contact_cells)
-        contact.name = "ContactData"
+            contact = None
         return contact
 
     def get_ele_centers_data(self):
@@ -328,7 +328,7 @@ class GetFEMData(FEMData):
                 name="eleCenters",
             )
         else:
-            return xr.DataArray(self.ele_centers, name="eleCenters")
+            return None
 
     def get_ele_data(self):
         self._make_ele_info()  # This function is called to gather all element data
@@ -381,15 +381,21 @@ class GetFEMData(FEMData):
 
         # ----------------------------------------------------------------
         # update and save the model info
-        nodal_data.attrs["unusedNodeTags"] = tuple(self.unused_node_tags)
-        self.MODEL_INFO[nodal_data.name] = nodal_data
-        self.MODEL_INFO[node_fixed_data.name] = node_fixed_data
-        self.MODEL_INFO[nodal_load_data.name] = nodal_load_data
-        self.MODEL_INFO[ele_load_data.name] = ele_load_data
-        self.MODEL_INFO[mp_constraint_data.name] = mp_constraint_data
+        if nodal_data is not None:
+            nodal_data.attrs["unusedNodeTags"] = tuple(self.unused_node_tags)
+            self.MODEL_INFO[nodal_data.name] = nodal_data
+        if node_fixed_data is not None:
+            self.MODEL_INFO[node_fixed_data.name] = node_fixed_data
+        if nodal_load_data is not None:
+            self.MODEL_INFO[nodal_load_data.name] = nodal_load_data
+        if ele_load_data is not None:
+            self.MODEL_INFO[ele_load_data.name] = ele_load_data
+        if mp_constraint_data is not None:
+            self.MODEL_INFO[mp_constraint_data.name] = mp_constraint_data
         # -----------------------------------------------------------------
         for edata in ele_data[:-1]:
-            self.MODEL_INFO[edata.name] = edata
+            if edata is not None:
+                self.MODEL_INFO[edata.name] = edata
 
         self.ELE_CELLS = ele_data[-1]
 
@@ -422,14 +428,15 @@ def save_model_data(
     model_data = {}
     for key in model_info:
         model_data[f"ModelInfo/{key}"] = xr.Dataset({key: model_info[key]})
-    if len(cells) > 0:
-        for key in cells:
-            model_data[f"Cells/{key}"] = xr.Dataset({key: cells[key]})
-    else:
-        model_data["Cells"] = xr.Dataset()
+    for key in cells:
+        model_data[f"Cells/{key}"] = xr.Dataset({key: cells[key]})
+    if model_data == {}:
+        color = get_random_color()
+        CONSOLE.print(f"{PKG_PREFIX} No model data to be saved!")
+        raise RuntimeError()
     dt = xr.DataTree.from_dict(model_data, name=f"{MODEL_FILE_NAME}")
     dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
-    # /////////////////////////////////////
+    # --------------------------------------------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Model data has been saved to [bold {color}]{output_filename}[/]!")
 
@@ -471,8 +478,12 @@ def load_model_data(
             CONSOLE.print(f"{PKG_PREFIX} Loading model data from [bold {color}]{filename}[/] ...")
         model_info, cells = {}, {}
         with xr.open_datatree(filename, engine="netcdf4").load() as dt:
-            for key, value in dt["ModelInfo"].items():
-                model_info[key] = value[key]
-            for key, value in dt["Cells"].items():
-                cells[key] = value[key]
+            if "ModelInfo" in dt:
+                for key, value in dt["ModelInfo"].items():
+                    model_info[key] = value[key]
+            if "Cells" in dt:
+                for key, value in dt["Cells"].items():
+                    cells[key] = value[key]
+        if model_info == {} and cells == {}:
+            raise RuntimeError(f"{PKG_PREFIX} No model data in the file {filename}!")  # noqa: TRY003
     return model_info, cells

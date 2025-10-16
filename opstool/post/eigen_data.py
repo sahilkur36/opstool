@@ -141,6 +141,8 @@ def save_eigen_data(
     output_filename = RESULTS_DIR + "/" + f"{EIGEN_FILE_NAME}-{odb_tag}.nc"
     # -----------------------------------------------------------------
     model_info, _ = GetFEMData().get_model_info()
+    if model_info == {}:
+        raise ValueError("No model data found, please check your model!")  # noqa: TRY003
     modal_props, eigen_vectors = _get_eigen_info(mode_tag, solver)
     eigen_data = {}
     for key in model_info:
@@ -149,7 +151,7 @@ def save_eigen_data(
     eigen_data["Eigen/EigenVectors"] = xr.Dataset({eigen_vectors.name: eigen_vectors})
     dt = xr.DataTree.from_dict(eigen_data, name=f"{EIGEN_FILE_NAME}")
     dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
-    # /////////////////////////////////////
+    # -----------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Eigen data has been saved to [bold {color}]{output_filename}[/]!")
 
@@ -178,6 +180,8 @@ def load_eigen_data(
         model_info = {}
         for key, value in dt["ModelInfo"].items():
             model_info[key] = value[key]
+        if model_info == {}:
+            raise ValueError("No model data found, please check your model!")  # noqa: TRY003
         model_props = dt["Eigen/ModalProps"]["ModalProps"]
         eigen_vectors = dt["Eigen/EigenVectors"]["EigenVectors"]
     return model_props, eigen_vectors, model_info

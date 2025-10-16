@@ -47,11 +47,14 @@ class ModelInfoStepData(ResponseBase):
             new_data = xr.concat(data, dim="time", join="outer")
             new_data.coords["time"] = self.times
             self.model_info_steps[key] = new_data
-        model_update = 1 if self.model_update else 0
+        model_update = [1] if self.model_update else [0]
         self.model_info_steps["ModelUpdate"] = xr.DataArray(model_update, name="ModelUpdate")
 
     def get_current_node_tags(self):
-        da = self.model_info_steps["NodalData"][-1]
+        da = self.model_info_steps.get("NodalData")
+        if da is None:
+            return []
+        da = da[-1]
         node_tags = list(da.coords["nodeTags"].data)
         unused_node_tags = da.attrs["unusedNodeTags"]
         for tag in unused_node_tags:
@@ -60,49 +63,73 @@ class ModelInfoStepData(ResponseBase):
         return node_tags
 
     def get_current_truss_tags(self):
-        da = self.model_info_steps["TrussData"][-1]
+        da = self.model_info_steps.get("TrussData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_frame_tags(self):
-        da = self.model_info_steps["BeamData"][-1]
+        da = self.model_info_steps.get("BeamData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_link_tags(self):
-        da = self.model_info_steps["LinkData"][-1]
+        da = self.model_info_steps.get("LinkData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_shell_tags(self):
-        da = self.model_info_steps["ShellData"][-1]
+        da = self.model_info_steps.get("ShellData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_plane_tags(self):
-        da = self.model_info_steps["PlaneData"][-1]
+        da = self.model_info_steps.get("PlaneData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_brick_tags(self):
-        da = self.model_info_steps["BrickData"][-1]
+        da = self.model_info_steps.get("BrickData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_contact_tags(self):
-        da = self.model_info_steps["ContactData"][-1]
+        da = self.model_info_steps.get("ContactData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da.coords["eleTags"].values
         return []
 
     def get_current_frame_load_data(self):
-        da = self.model_info_steps["EleLoadData"][-1]
+        da = self.model_info_steps.get("FrameLoadData")
+        if da is None:
+            return []
+        da = da[-1]
         if len(da) > 0:
             return da
         return []
@@ -125,7 +152,7 @@ class ModelInfoStepData(ResponseBase):
         model_info = {}
         for key, value in dt["ModelInfo"].items():
             model_info[key] = value[key].load()
-        model_update = int(model_info["ModelUpdate"])
+        model_update = int(model_info["ModelUpdate"][0])
         model_update = model_update == 1
 
         if unit_factors:
@@ -137,17 +164,20 @@ class ModelInfoStepData(ResponseBase):
     def _unit_transform(model_info, unit_factors):
         disp_factor = unit_factors["disp"]
 
-        model_info["NodalData"] *= disp_factor
-        model_info["NodalData"].attrs["minBoundSize"] *= disp_factor
-        model_info["NodalData"].attrs["maxBoundSize"] *= disp_factor
-        bounds = model_info["NodalData"].attrs["bounds"]
-        model_info["NodalData"].attrs["bounds"] = (data * disp_factor for data in bounds)
+        if "NodalData" in model_info:
+            model_info["NodalData"] *= disp_factor
+            model_info["NodalData"].attrs["minBoundSize"] *= disp_factor
+            model_info["NodalData"].attrs["maxBoundSize"] *= disp_factor
+            bounds = model_info["NodalData"].attrs["bounds"]
+            model_info["NodalData"].attrs["bounds"] = tuple([data * disp_factor for data in bounds])
 
-        if "info" in model_info["FixedNodalData"].coords:
+        if "FixedNodalData" in model_info and "info" in model_info["FixedNodalData"].coords:
             model_info["FixedNodalData"].loc[{"info": ["x", "y", "z"]}] *= disp_factor
-        if "info" in model_info["MPConstraintData"].coords:
+        if "MPConstraintData" in model_info and "info" in model_info["MPConstraintData"].coords:
             model_info["MPConstraintData"].loc[{"info": ["xo", "yo", "zo"]}] *= disp_factor
-        model_info["eleCenters"] *= disp_factor
+
+        if "eleCenters" in model_info:
+            model_info["eleCenters"] *= disp_factor
 
         return model_info
 
@@ -162,8 +192,10 @@ class ModelInfoStepData(ResponseBase):
         data_type: str
             The data type to read.
         """
-        model_update = int(dt["ModelInfo"]["ModelUpdate"]["ModelUpdate"])
-        data = dt["ModelInfo"][data_type][data_type]
-        if model_update == 1:
-            return data
-        return data.isel(time=0)
+        model_update = int(dt["ModelInfo"]["ModelUpdate"]["ModelUpdate"][0])
+        if data_type in dt["ModelInfo"]:
+            data = dt["ModelInfo"][data_type][data_type]
+            if model_update == 1:
+                return data
+            return data.isel(time=0)
+        return []

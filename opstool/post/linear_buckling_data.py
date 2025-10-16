@@ -110,6 +110,8 @@ def save_linear_buckling_data(
     output_filename = RESULTS_DIR + "/" + f"{BUCKLING_FILE_NAME}-{odb_tag}.nc"
     # -----------------------------------------------------------------
     model_info, _ = GetFEMData().get_model_info()
+    if model_info == {}:
+        raise ValueError("No model data found, please check your model!")  # noqa: TRY003
     eigenvalues, eigenvectors = _get_linear_buckling_data(kmat=kmat, kgeo=kgeo, n_modes=n_modes)
     eigen_data = {}
     for key in model_info:
@@ -118,7 +120,7 @@ def save_linear_buckling_data(
     eigen_data[f"LinearBuckling/{eigenvectors.name}"] = xr.Dataset({eigenvectors.name: eigenvectors})
     dt = xr.DataTree.from_dict(eigen_data, name=BUCKLING_FILE_NAME)
     dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
-    # /////////////////////////////////////
+    # -----------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Linear Buckling data has been saved to [bold {color}]{output_filename}[/]!")
 

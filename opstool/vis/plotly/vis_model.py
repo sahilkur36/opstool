@@ -24,20 +24,26 @@ PKG_NAME = CONFIGS.get_pkg_name()
 class PlotModelBase(PlotResponsePlotlyBase):
     def __init__(self, model_info: dict, cells: dict):
         # --------------------------------------------------------------
-        self.nodal_data = model_info["NodalData"]
-        if "nodeTags" in self.nodal_data.coords:
+        self._set_model_data(model_info, cells)
+        # -------------------------------------------------------------
+        self.pargs = PLOT_ARGS
+        self.FIGURE = go.Figure()
+
+    def _set_model_data(self, model_info: dict, cells: dict):
+        self.nodal_data = model_info.get("NodalData", [])
+        if len(self.nodal_data) > 0:
             self.nodal_tags = self.nodal_data.coords["nodeTags"].values
+            self.points = self.nodal_data.to_numpy()
+            self.ndims = self.nodal_data.attrs["ndims"]
+            self.show_zaxis = not np.max(self.ndims) <= 2
+            self.bounds = self.nodal_data.attrs["bounds"]
+            self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
+            self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
         else:
             raise ValueError("Model have no nodal data!")  # noqa: TRY003
-        self.points = self.nodal_data.to_numpy()
-        self.ndims = self.nodal_data.attrs["ndims"]
-        self.show_zaxis = not np.max(self.ndims) <= 2
-        self.bounds = self.nodal_data.attrs["bounds"]
-        self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
-        self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
         # -------------------------------------------------------------
-        self.ele_centers = model_info["eleCenters"]
-        if "eleTags" in self.ele_centers.coords:
+        self.ele_centers = model_info.get("eleCenters", [])
+        if len(self.ele_centers) > 0 and "eleTags" in self.ele_centers.coords:
             self.ele_tags = self.ele_centers.coords["eleTags"]
         else:
             self.ele_tags = []
@@ -45,25 +51,22 @@ class PlotModelBase(PlotResponsePlotlyBase):
         self.ele_data_types = cells
         self.ele_types = list(cells.keys())
         # -------------------------------------------------------------
-        self.fixed_node_data = model_info["FixedNodalData"]
-        self.nodal_load_data = model_info["NodalLoadData"]
-        self.ele_load_data = model_info["EleLoadData"]
-        self.mp_constraint_data = model_info["MPConstraintData"]
+        self.fixed_node_data = model_info.get("FixedNodalData", [])
+        self.nodal_load_data = model_info.get("NodalLoadData", [])
+        self.ele_load_data = model_info.get("EleLoadData", [])
+        self.mp_constraint_data = model_info.get("MPConstraintData", [])
         # ------------------------------------------------------------
-        self.beam_data = model_info["BeamData"]
+        self.beam_data = model_info.get("BeamData", [])
         # -------------------------------------------------------------
-        self.link_data = model_info["LinkData"]
+        self.link_data = model_info.get("LinkData", [])
         # -------------------------------------------------------------
-        self.shell_data = model_info["ShellData"]
+        self.shell_data = model_info.get("ShellData", [])
         # -------------------------------------------------------------
-        self.line_data = model_info["AllLineElesData"]
+        self.line_data = model_info.get("AllLineElesData", [])
         self.line_cells, self.line_tags = self._get_line_cells(self.line_data)
         # -------------------------------------------------------------
-        self.unstru_data = model_info["UnstructuralData"]
+        self.unstru_data = model_info.get("UnstructuralData", [])
         self.unstru_tags, self.unstru_cell_types, self.unstru_cells = self._get_unstru_cells(self.unstru_data)
-        # -------------------------------------------------------------
-        self.pargs = PLOT_ARGS
-        self.FIGURE = go.Figure()
 
     def plot_model_one_color(
         self,

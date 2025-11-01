@@ -53,7 +53,7 @@ class PlotModelBase(PlotResponsePlotlyBase):
         # -------------------------------------------------------------
         self.fixed_node_data = model_info.get("FixedNodalData", [])
         self.nodal_load_data = model_info.get("NodalLoadData", [])
-        self.ele_load_data = model_info.get("EleLoadData", [])
+        self.frame_load_data = model_info.get("FrameLoadData", [])
         self.mp_constraint_data = model_info.get("MPConstraintData", [])
         # ------------------------------------------------------------
         self.beam_data = model_info.get("BeamData", [])
@@ -488,9 +488,9 @@ class PlotModelBase(PlotResponsePlotlyBase):
                 )
 
     def plot_ele_load(self, plotter: list, alpha: float = 1.0):
-        if len(self.ele_load_data) == 0:
+        if len(self.frame_load_data) == 0:
             return None
-        petags = self.ele_load_data.coords["PatternEleTags"].values
+        petags = self.frame_load_data.coords["PatternEleTags"].values
         patterntags, eletags = [], []
         for item in petags:
             num1, num2 = item.split("-")
@@ -498,7 +498,7 @@ class PlotModelBase(PlotResponsePlotlyBase):
             eletags.append(int(num2))
         patterntags, eletags = np.array(patterntags), np.array(eletags)
         patterntags2 = np.unique(patterntags)
-        load_info = self.ele_load_data.to_numpy()
+        load_info = self.frame_load_data.to_numpy()
         new_points = []
         new_locals = []
         new_ptags = []

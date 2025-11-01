@@ -52,7 +52,8 @@ class FEMData:
         self.pattern_tags = ops.getPatterns()
         self.node_load_data, self.pattern_node_tags = [], []
         # Ele load info
-        self.ele_load_data, self.pattern_ele_tags = [], []
+        self.beam_ele_load_data, self.beam_pattern_ele_tags = [], []
+        self.surface_ele_load_data, self.surface_pattern_ele_tags = [], []
         # mp-constraints
         self.mp_cells, self.mp_centers, self.mp_dofs, self.mp_pair_nodes = (
             [],
@@ -158,7 +159,6 @@ class FEMData:
         self.pattern_node_tags = np.array(self.pattern_node_tags)
 
     def _make_ele_load(self):
-        self.ele_load_data, self.pattern_ele_tags = [], []
         for pattern in self.pattern_tags:
             eletags = ops.getEleLoadTags(pattern)
             eleclasstags = ops.getEleLoadClassTags(pattern)
@@ -166,43 +166,55 @@ class FEMData:
             loc = 0
             for tag, classtag in zip(eletags, eleclasstags):
                 ntags = ops.eleNodes(tag)
-                if len(ntags) != 2:
-                    continue
-                wya, wyb, wza, wzb, wxa, wxb, xa, xb = (
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                )
-                if classtag == 3:  # beamUniform2D, Wya <Wxa>
-                    wy, wx = loaddata[loc : loc + 2]
-                    wya, wyb, wxa, wxb = wy, wy, wx, wx
-                    loc += 2
-                elif classtag == 12:  # beamUniform2D, Wya <Wxa> <aL> <bL> <Wyb> <Wxb>
-                    wya, wyb, wxa, wxb, xa, xb = loaddata[loc : loc + 6]
-                    loc += 6
-                elif classtag == 5:  # beamUniform3D wy, wz, wx
-                    wy, wz, wx = loaddata[loc : loc + 3]
-                    wya, wyb, wza, wzb, wxa, wxb = wy, wy, wz, wz, wx, wx
-                    loc += 3
-                elif classtag == 4:  # beamPoint2D, Py xL <Px>
-                    wya, wxa, xa = loaddata[loc : loc + 3]
-                    xb = -10000
-                    loc += 3
-                elif classtag == 6:  # beamPoint3D, Py, Pz, x, N
-                    wya, wza, wxa, xa = loaddata[loc : loc + 4]
-                    xb = -10000
-                    loc += 4
-                else:
+                if len(ntags) == 2:
+                    wya, wyb, wza, wzb, wxa, wxb, xa, xb = (
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                    )
+                    if classtag == 3:  # LOAD_TAG_Beam2dUniformLoad, Wya <Wxa>
+                        wy, wx = loaddata[loc : loc + 2]
+                        wya, wyb, wxa, wxb = wy, wy, wx, wx
+                        loc += 2
+                    elif classtag == 5:  # LOAD_TAG_Beam3dUniformLoad, wy, wz, wx
+                        wy, wz, wx = loaddata[loc : loc + 3]
+                        wya, wyb, wza, wzb, wxa, wxb = wy, wy, wz, wz, wx, wx
+                        loc += 3
+                    elif classtag == 4:  # LOAD_TAG_Beam2dPointLoad, Py xL <Px>
+                        wya, wxa, xa = loaddata[loc : loc + 3]
+                        xb = -10000
+                        loc += 3
+                    elif classtag == 6:  # LOAD_TAG_Beam3dPointLoad, Py, Pz, x, N
+                        wya, wza, wxa, xa = loaddata[loc : loc + 4]
+                        xb = -10000
+                        loc += 4
+                    elif classtag == 12:  # LOAD_TAG_Beam2dPartialUniformLoad, Wya <Wxa> <aL> <bL> <Wyb> <Wxb>
+                        wya, wyb, wxa, wxb, xa, xb = loaddata[loc : loc + 6]
+                        loc += 6
+                    elif classtag == 121:  # LOAD_TAG_Beam3dPartialUniformLoad, wy, wz, wx, aL, bL, wyb, wzb, wxb
+                        wya, wza, wxa, xa, xb, wyb, wzb, wxb = loaddata[loc : loc + 8]
+                        loc += 8
+                    else:
+                        pass
+                    data = [*ntags, wya, wyb, wza, wzb, wxa, wxb, xa, xb]
+                    self.beam_ele_load_data.append(data)
+                    self.beam_pattern_ele_tags.append([pattern, tag])
+                elif len(ntags) in [3, 4]:
+                    # LOAD_TAG_SurfaceLoader
+                    # if classtag == 9:
+                    #     p = loaddata[loc]
+                    #     loc += 1
+                    # data = [*ntags, p]
+                    # self.surface_ele_load_data.append(data)
+                    # self.surface_pattern_ele_tags.append([pattern, tag])
                     pass
-                data = [*ntags, wya, wyb, wza, wzb, wxa, wxb, xa, xb]
-                self.ele_load_data.append(data)
-                self.pattern_ele_tags.append([pattern, tag])
-        self.pattern_ele_tags = np.array(self.pattern_ele_tags)
+        self.beam_pattern_ele_tags = np.array(self.beam_pattern_ele_tags)
+        self.surface_pattern_ele_tags = np.array(self.surface_pattern_ele_tags)
 
     def _make_mp_constraint(self):
         self.mp_cells, self.mp_centers, self.mp_dofs, self.mp_pair_nodes = (

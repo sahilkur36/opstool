@@ -85,10 +85,10 @@ class GetFEMData(FEMData):
 
     def get_ele_load_data(self):
         self._make_ele_load()
-        petags = [f"{tags[0]}-{tags[1]}" for tags in self.pattern_ele_tags]
-        if len(self.pattern_ele_tags) > 0:
-            ele_load_data = xr.DataArray(
-                self.ele_load_data,
+        beam_petags = [f"{tags[0]}-{tags[1]}" for tags in self.beam_pattern_ele_tags]
+        if len(self.beam_pattern_ele_tags) > 0:
+            beam_load_data = xr.DataArray(
+                self.beam_ele_load_data,
                 coords={
                     "loadData": [
                         "nodeI",
@@ -102,14 +102,14 @@ class GetFEMData(FEMData):
                         "xa",
                         "xb",
                     ],
-                    "PatternEleTags": petags,
+                    "PatternEleTags": beam_petags,
                 },
                 dims=["PatternEleTags", "loadData"],
             )
-            ele_load_data.name = "EleLoadData"
+            beam_load_data.name = "FrameLoadData"
         else:
-            ele_load_data = None
-        return ele_load_data
+            beam_load_data = None
+        return beam_load_data
 
     def get_mp_constraint_data(self):
         self._make_mp_constraint()

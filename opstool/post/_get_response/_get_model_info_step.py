@@ -38,7 +38,8 @@ class ModelInfoStepData(ResponseBase):
         if self.model_update:
             model_info, _ = GetFEMData().get_model_info()
             for key, value in model_info.items():
-                self.model_info_steps[key].append(value)
+                if key in self.model_info_steps:
+                    self.model_info_steps[key].append(value)
             self.times.append(ops.getTime())
         self.step_track += 1
 

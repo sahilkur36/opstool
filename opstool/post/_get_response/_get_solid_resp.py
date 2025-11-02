@@ -53,7 +53,7 @@ class BrickRespStepData(ResponseBase):
             "tau_oct": "Octahedral shear stress (strains).",
         }
         self.GaussPoints = None
-        self.stressDOFs = None
+        self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "eta_r"]
         self.strainDOFs = ["eps11", "eps22", "eps33", "eps12", "eps23", "eps13"]
 
         self.initialize()
@@ -84,13 +84,6 @@ class BrickRespStepData(ResponseBase):
             if len(node_tags) == 0:
                 self.compute_nodal_resp = False
 
-        if self.stressDOFs is None:
-            if stresses.shape[-1] == 6:
-                self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13"]
-            elif stresses.shape[-1] == 7:
-                self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "eta_r"]
-            else:
-                self.stressDOFs = [f"sigma{i + 1}" for i in stresses.shape[-1]]
         if self.GaussPoints is None:
             self.GaussPoints = np.arange(stresses.shape[1]) + 1
 
@@ -314,13 +307,8 @@ def _get_gauss_resp(ele_tags, dtype: dict):
         integr_point_strain = []
         for i in range(100000000):  # Ugly but useful
             # loop for integrPoint
-            stress_ = ops.eleResponse(etag, "material", f"{i + 1}", "stresses")
-            if len(stress_) == 0:
-                stress_ = ops.eleResponse(etag, "integrPoint", f"{i + 1}", "stresses")
-            strain_ = ops.eleResponse(etag, "material", f"{i + 1}", "strains")
-            if len(strain_) == 0:
-                strain_ = ops.eleResponse(etag, "integrPoint", f"{i + 1}", "strains")
-            if len(stress_) == 0 or len(strain_) == 0:
+            stress_, strain_ = _get_gp_resp_by_one(etag, i)
+            if stress_ is None or strain_ is None:
                 break
             integr_point_stress.append(stress_)
             integr_point_strain.append(strain_)
@@ -334,7 +322,7 @@ def _get_gauss_resp(ele_tags, dtype: dict):
                 integr_point_strain.append(strain)
         # Finally, if void set to 0.0
         if len(integr_point_stress) == 0:
-            integr_point_stress.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+            integr_point_stress.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
         if len(integr_point_strain) == 0:
             integr_point_strain.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
 
@@ -343,6 +331,22 @@ def _get_gauss_resp(ele_tags, dtype: dict):
     stresses = _expand_to_uniform_array(all_stresses, dtype=dtype["float"])
     strains = _expand_to_uniform_array(all_strains, dtype=dtype["float"])
     return stresses, strains
+
+
+def _get_gp_resp_by_one(etag, i):
+    stress_ = ops.eleResponse(etag, "material", f"{i + 1}", "stresses")
+    if len(stress_) == 0:
+        stress_ = ops.eleResponse(etag, "integrPoint", f"{i + 1}", "stresses")
+    strain_ = ops.eleResponse(etag, "material", f"{i + 1}", "strains")
+    if len(strain_) == 0:
+        strain_ = ops.eleResponse(etag, "integrPoint", f"{i + 1}", "strains")
+    if len(stress_) == 0 or len(strain_) == 0:
+        return None, None
+    if len(stress_) == 6:
+        stress_ = [*stress_, 0.0]  # add eta_r as 0.0
+    elif len(stress_) > 6:
+        stress_ = stress_[:7]
+    return stress_, strain_
 
 
 def _calculate_stresses_measures_4D(stress_array, dtype):

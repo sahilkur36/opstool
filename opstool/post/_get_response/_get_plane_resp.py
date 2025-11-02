@@ -50,7 +50,7 @@ class PlaneRespStepData(ResponseBase):
             "tau_max": "Maximum shear stress (strains).",
         }
         self.GaussPoints = None
-        self.stressDOFs = None
+        self.stressDOFs = ["sigma11", "sigma22", "sigma12", "sigma33", "eta_r"]
         self.strainDOFs = ["eps11", "eps22", "eps12"]
 
         self.initialize()
@@ -81,16 +81,6 @@ class PlaneRespStepData(ResponseBase):
             if len(node_tags) == 0:
                 self.compute_nodal_resp = False
 
-        if self.stressDOFs is None:
-            ndofs = stresses.shape[-1]
-            if ndofs == 3:
-                self.stressDOFs = ["sigma11", "sigma22", "sigma12"]
-            elif ndofs == 5:
-                self.stressDOFs = ["sigma11", "sigma22", "sigma12", "sigma33", "eta_r"]
-            elif ndofs == 4:
-                self.stressDOFs = ["sigma11", "sigma22", "sigma12", "sigma33"]
-            else:
-                self.stressDOFs = [f"sigma{i + 1}" for i in range(ndofs)]
         if self.GaussPoints is None:
             self.GaussPoints = np.arange(strains.shape[1]) + 1
 
@@ -342,7 +332,7 @@ def _collect_element_responses(etag):
             strains.append(e)
 
     if not stresses:
-        stresses.append([np.nan, np.nan, np.nan])
+        stresses.append([np.nan, np.nan, np.nan, np.nan, np.nan])
     if not strains:
         strains.append([np.nan, np.nan, np.nan])
     return stresses, strains
@@ -374,7 +364,11 @@ def _reshape_stress(stress):
         # shear strength at the current confinement (0<=ηr<=1.0).
         stress = [stress[0], stress[1], stress[3], stress[2], stress[4]]
     elif len(stress) == 4:
-        stress = [stress[0], stress[1], stress[3], stress[2]]
+        # sigma_xx, sigma_yy, sigma_zz, sigma_xy
+        stress = [stress[0], stress[1], stress[3], stress[2], 0.0]
+    else:
+        # sigma_xx, sigma_yy, sigma_xy
+        stress = [stress[0], stress[1], stress[2], 0.0, 0.0]
     return stress
 
 

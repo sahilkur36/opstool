@@ -324,7 +324,11 @@ class CreateODB:
 
         if _fiber_ele_tags is not None and _save_fiber_sec_resp:
             if self._FiberSecResp is None:
-                self._FiberSecResp = FiberSecRespStepData(_fiber_ele_tags, dtype=_POST_ARGS.dtype)
+                self._FiberSecResp = FiberSecRespStepData(
+                    _fiber_ele_tags,
+                    dtype=_POST_ARGS.dtype,
+                    model_update=self._model_update,
+                )
             else:
                 self._FiberSecResp.add_data_one_step()
 

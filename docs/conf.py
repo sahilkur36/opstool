@@ -10,6 +10,27 @@ import os
 import sys
 from pathlib import Path
 
+import plotly.io as pio
+import pyvista
+from plotly.io._sg_scraper import plotly_sg_scraper
+from pyvista.plotting.utilities.sphinx_gallery import DynamicScraper
+from sphinx_gallery.sorting import FileNameSortKey
+
+pio.renderers.default = "sphinx_gallery"
+
+# Manage errors
+pyvista.set_error_output_file("errors.txt")
+# Ensure that offscreen rendering is used for docs generation
+pyvista.OFF_SCREEN = True  # Not necessary - simply an insurance policy
+# Preferred plotting style for documentation
+pyvista.set_plot_theme("document_build")
+pyvista.set_jupyter_backend(None)
+
+# necessary when building the sphinx gallery
+pyvista.BUILDING_GALLERY = True
+os.environ["PYVISTA_BUILDING_GALLERY"] = "true"
+
+
 this_dir = Path(__file__).resolve().parent.parent
 
 about_path = this_dir / "opstool" / "__about__.py"
@@ -44,6 +65,21 @@ extensions = [
     # 'jupyter_sphinx.execute'
     "sphinx_copybutton",
     "furo.sphinxext",
+    "sphinx_gallery.gen_gallery",
+    "pyvista.ext.plot_directive",
+    "pyvista.ext.viewer_directive",
+]
+
+exclude_patterns = [
+    "_build/**",
+    "**/.ipynb_checkpoints/**",
+    "auto_examples/**/*.ipynb",
+    "auto_examples/**/*.py",
+    "auto_examples/**/*.py.md5",
+    "auto_examples/**/*.zip",
+    "auto_examples/**/*.codeobj.json",
+    "Thumbs.db",
+    ".DS_Store",
 ]
 
 # autodoc config
@@ -64,7 +100,7 @@ nbsphinx_execute_arguments = [
 ]
 
 # templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
 
 sd_custom_directives = {
     "dropdown": {
@@ -74,6 +110,33 @@ sd_custom_directives = {
             "class-container": "sn-dropdown-default",
         },
     }
+}
+
+
+# pyvista plot directive
+# matplotlib plot directive
+plot_include_source = True
+plot_html_show_source_link = False
+plot_html_show_formats = False
+plot_formats = ["png"]
+
+# pyvista plot directive
+pyvista_plot_include_source = True
+
+sphinx_gallery_conf = {
+    "examples_dirs": ["quick-start", "../examples"],
+    "gallery_dirs": ["auto_examples/quick-start", "auto_examples/examples"],
+    "image_scrapers": (DynamicScraper(), plotly_sg_scraper, "matplotlib"),
+    "download_all_examples": False,
+    "remove_config_comments": True,
+    "reset_modules_order": "both",
+    "filename_pattern": "ex-.*\\.py",
+    "ignore_pattern": "_.*\\.py",
+    "backreferences_dir": None,
+    "pypandoc": True,
+    "capture_repr": ("_repr_html_",),
+    "within_subsection_order": FileNameSortKey,
+    "nested_sections": True,
 }
 
 # -- Options for HTML output -------------------------------------------------

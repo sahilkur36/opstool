@@ -166,7 +166,7 @@ Contents
    :maxdepth: 1
    :caption: Examples
 
-   examples/index
+   auto_examples/examples/index
 
 
 .. toctree::

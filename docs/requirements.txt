@@ -6,6 +6,7 @@ sphinx-copybutton
 jupyter-sphinx
 nbsphinx
 sphinx_design
+sphinx-gallery
 furo
 notebook
 numpy
@@ -13,6 +14,7 @@ scipy
 xarray
 shapely
 pyvista
+trame
 plotly
 gmsh
 matplotlib
@@ -24,3 +26,4 @@ Sphinx
 pythreejs
 triangle
 jinja2
+pypandoc

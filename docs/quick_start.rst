@@ -1,33 +1,17 @@
 .. _quickstart:
 
-Quick Start
-=============
-
-Introduction to opstool
-------------------------
-
 .. role:: blue
 .. role:: blue-bold
+
+.. include:: auto_examples/quick-start/index.rst
 
 **opstool** is a powerful and user-friendly library designed to simplify and enhance structural analysis workflows 
 with **OpenSees** and **OpenSeesPy**. 
 It provides advanced tools for preprocessing, postprocessing, and visualization, making structural 
 simulations more efficient and accessible.
 
-Quick Guide
----------------------------
-
-.. card:: 
-
-  .. toctree::
-    :maxdepth: 1
-
-    src/quick_start/plot_model.ipynb
-    examples/post/Frame2D/test_model.ipynb
-
-
 Features
----------------
+########
 
 .. card:: :octicon:`graph;1.5em;sd-mr-1 fill-primary` Preprocessing
 

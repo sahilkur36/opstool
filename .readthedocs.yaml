@@ -17,6 +17,8 @@ build:
     - libglu1-mesa
     - libblas3
     - pandoc
+    - libgl1-mesa-glx
+    - libglib2.0-0
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:

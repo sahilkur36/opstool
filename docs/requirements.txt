@@ -13,8 +13,9 @@ numpy
 scipy
 xarray
 netCDF4
+imageio
 shapely
-pyvista[jupyter]
+pyvista[all]
 trame
 plotly
 gmsh

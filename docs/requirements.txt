@@ -13,7 +13,7 @@ numpy
 scipy
 xarray
 shapely
-pyvista
+pyvista[jupyter]
 trame
 plotly
 gmsh

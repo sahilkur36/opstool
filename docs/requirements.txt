@@ -12,6 +12,7 @@ notebook
 numpy
 scipy
 xarray
+netCDF4
 shapely
 pyvista[jupyter]
 trame

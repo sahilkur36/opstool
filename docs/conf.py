@@ -21,9 +21,7 @@ pio.renderers.default = "sphinx_gallery"
 # Manage errors
 pyvista.set_error_output_file("errors.txt")
 # Ensure that offscreen rendering is used for docs generation
-pyvista.start_xvfb()
 pyvista.OFF_SCREEN = True  # Not necessary - simply an insurance policy
-pyvista.global_theme.off_screen = True
 # Preferred plotting style for documentation
 pyvista.set_plot_theme("document_build")
 # pyvista.set_jupyter_backend(None)

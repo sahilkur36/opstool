@@ -19,6 +19,7 @@ build:
     - pandoc
     - libgl1-mesa-glx
     - libglib2.0-0
+    - xvfb
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:

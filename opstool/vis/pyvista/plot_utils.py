@@ -51,7 +51,7 @@ class _PLOT_ARGS_TYPES1(TypedDict, total=False):
     mesh_opacity: float
     font_size: int
     title_font_size: int
-    off_screen: bool
+    off_screen: bool | None
     scalar_bar_kargs: dict
     cmap: list | None | str  # or str for named colorscale, default is default_cmap
     cmap_model: list | None | str  # or str for named colorscale, default is None
@@ -103,7 +103,7 @@ PLOT_ARGS = SimpleNamespace(
     mesh_opacity=1.0,
     font_size=15,
     title_font_size=18,
-    off_screen=False,
+    off_screen=pv.OFF_SCREEN,
     scalar_bar_kargs=_scalar_bar_kargs,
     # --------------------------
     color_point="#FF0055",

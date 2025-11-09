@@ -1,20 +1,18 @@
-# opstool
-*Pre-Processing, Post-Processing, and Visualization Tailored for OpenSeesPy and OpenSees*
+# opstoo: Pre-Processing, Post-Processing, and Visualization for OpenSeesPy and OpenSees
 
 [![pypi](https://img.shields.io/pypi/v/opstool)](https://pypi.org/project/opstool/)
 [![Downloads](https://static.pepy.tech/badge/opstool)](https://pepy.tech/project/opstool)
-[![Documentation Status](https://readthedocs.org/projects/opstool/badge/?version=latest)](https://opstool.readthedocs.io/en/latest/?badge=latest)
+<!-- [![Documentation Status](https://readthedocs.org/projects/opstool/badge/?version=latest)](https://opstool.readthedocs.io/en/latest/?badge=latest) -->
 [![github stars](https://img.shields.io/github/stars/yexiang1992/opstool?style=social)](https://github.com/yexiang1992/opstool)
 [![GitHub License](https://img.shields.io/github/license/yexiang1992/opstool?style=flat)](https://img.shields.io/github/license/yexiang1992/opstool?style=flat)
 [![CodeFactor](https://www.codefactor.io/repository/github/yexiang92/opstool/badge)](https://www.codefactor.io/repository/github/yexiang92/opstool)
 
-``opstool`` is a powerful and user-friendly package designed to simplify and enhance structural analysis workflows 
-with [OpenSees](https://opensees.berkeley.edu/) and [OpenSeesPy](https://openseespydoc.readthedocs.io/en/latest/). 
-It provides advanced tools for preprocessing, postprocessing, and visualization, making structural 
-simulations more efficient and accessible.
-
+``opstool`` is a powerful and user-friendly package designed to simplify and enhance structural analysis workflows
+with [OpenSees](https://opensees.berkeley.edu/) and [OpenSeesPy](https://openseespydoc.readthedocs.io/en/latest/).
+It provides advanced tools for preprocessing, postprocessing, and visualization, making structural simulations more efficient and accessible.
 
 ## Installation
+
 The package is still under development.
 To use, install `opstool` from [opstool-PyPI](https://pypi.org/project/opstool/):
 
@@ -26,6 +24,7 @@ The restriction on the python version mainly depends on `openseespy`,
 it is recommended that you use [Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) or [Anaconda Distribution](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) to avoid library version incompatibilities.
 
 After installing, open Anaconda Prompt to execute the following code:
+
 ```bash
 conda create -n opensees python=3.12 numpy scipy pandas xarray notebook matplotlib
 conda activate opensees
@@ -39,18 +38,16 @@ pip install opstool
 * Please use ``conda activate opensees`` to activate the environment, and then you can install various third-party packages in the environment, such as ``pip install openseespy`` and ``pip install opstool``.
 * You can also install the packages from [anaconda / packages](https://anaconda.org/anaconda/repo), such as ``conda install conda-forge::scikit-learn``.
 
-
-
 ## Document
 
-**Latest**: See [https://opstool.readthedocs.io/en/latest/](https://opstool.readthedocs.io/en/latest/).
+<!-- **Latest**: See [https://opstool.readthedocs.io/en/latest/](https://opstool.readthedocs.io/en/latest/).
 
-**Stable**: See [https://opstool.readthedocs.io/en/stable/](https://opstool.readthedocs.io/en/stable/)
+**Stable**: See [https://opstool.readthedocs.io/en/stable/](https://opstool.readthedocs.io/en/stable/) -->
+
+**Latest**: See [https://opstool-doc.vercel.app/](https://opstool-doc.vercel.app/).
 
 > [!TIP]
 > Since an opstool version **v1.0.1**, the API and features have undergone significant changes and upgrades. As a result, it feels more like a new library, and you should take some time to familiarize yourself with the new interface usage.
-
-
 
 ## Citing
 

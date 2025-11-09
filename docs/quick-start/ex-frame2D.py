@@ -441,8 +441,11 @@ plotter = opsvis.plot_nodal_responses_animation(
     odb_tag="seismic",
     resp_type="disp",
     resp_dof=["UX", "UY"],
-    framerate=100,  # Frames per second
-    savefig="NodalRespAnimation.mp4",
+    framerate=200,  # Frames per second
+    savefig="NodalRespAnimation.gif",  # or mp4
     defo_scale=10.0,
 )
-plotter.show()
+plotter.close()
+
+
+# %%

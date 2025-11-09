@@ -366,9 +366,17 @@ def _reshape_stress(stress):
     elif len(stress) == 4:
         # sigma_xx, sigma_yy, sigma_zz, sigma_xy
         stress = [stress[0], stress[1], stress[3], stress[2], 0.0]
-    else:
+    elif len(stress) == 3:
         # sigma_xx, sigma_yy, sigma_xy
         stress = [stress[0], stress[1], stress[2], 0.0, 0.0]
+    elif len(stress) == 2:
+        # sigma_xx, sigma_yy
+        stress = [stress[0], stress[1], 0.0, 0.0, 0.0]
+    elif len(stress) == 1:
+        # sigma_xx
+        stress = [stress[0], 0.0, 0.0, 0.0, 0.0]
+    else:
+        stress = [0.0, 0.0, 0.0, 0.0, 0.0]
     return stress
 
 

@@ -346,6 +346,8 @@ def _get_gp_resp_by_one(etag, i):
         stress_ = [*stress_, 0.0]  # add eta_r as 0.0
     elif len(stress_) > 6:
         stress_ = stress_[:7]
+    elif len(stress_) < 6:
+        stress_ = stress_ + [0.0] * (7 - len(stress_))
     return stress_, strain_
 
 

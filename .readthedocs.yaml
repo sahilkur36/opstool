@@ -6,7 +6,7 @@ version: 2
 
 # Set the OS, Python version, and other tools you might need
 build:
-  os: ubuntu-22.04
+  os: ubuntu-lts-latest
   tools:
     python: "3.12"
     # You can also specify other tool versions:
@@ -16,6 +16,7 @@ build:
   apt_packages:
     - libglu1-mesa
     - libblas3
+    - pandoc
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
@@ -24,6 +25,7 @@ sphinx:
   # builder: "dirhtml"
   # Fail on all warnings to avoid broken references
   # fail_on_warning: true
+  fail_on_warning: false
 
 # Optionally, build your docs in additional formats such as PDF and ePub
 # formats:

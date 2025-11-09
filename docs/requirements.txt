@@ -15,6 +15,7 @@ xarray
 netCDF4
 imageio
 shapely
+vtk-osmesa
 pyvista[all]
 trame
 plotly

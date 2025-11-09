@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from rich.console import Console
 
@@ -7,7 +8,10 @@ class CONFIGS:
     CONSOLE = Console()
 
     PKG_NAME = "OPSTOOL"
-    RESULTS_DIR = ".opstool.output"  # _OPSTOOL_ODB
+    # RESULTS_DIR = ".opstool.output"  # _OPSTOOL_ODB
+    RESULTS_DIR = Path(os.getcwd()) / ".opstool.output"
+    RESULTS_DIR.mkdir(exist_ok=True)
+    RESULTS_DIR = str(RESULTS_DIR)
     PKG_PREFIX = f"[bold #cf6275]{PKG_NAME}[/bold #cf6275] [bold #12e193]::[/bold #12e193] "
 
     MODEL_FILE_NAME = "ModelData"

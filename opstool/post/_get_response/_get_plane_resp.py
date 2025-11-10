@@ -49,7 +49,7 @@ class PlaneRespStepData(ResponseBase):
             "sigma_vm": "Von Mises stress.",
             "tau_max": "Maximum shear stress (strains).",
         }
-        self.GaussPoints = None
+        self.GaussPointsNo = None
         self.stressDOFs = ["sigma11", "sigma22", "sigma12", "sigma33", "eta_r"]
         self.strainDOFs = ["eps11", "eps22", "eps12"]
 
@@ -68,7 +68,9 @@ class PlaneRespStepData(ResponseBase):
         self.initialize()
 
     def add_data_one_step(self, ele_tags):
-        stresses, strains = _get_gauss_resp(ele_tags, dtype=self.dtype)
+        stresses, strains = _get_gauss_resp(ele_tags, dtype=self.dtype)  # shape: (num_eles, num_gps, num_dofs)
+        self.stressDOFs = self.stressDOFs[: stresses.shape[2]]
+        self.strainDOFs = self.strainDOFs[: strains.shape[2]]
 
         if self.compute_nodal_resp:
             node_stress_avg, node_stress_rel_error, node_tags = _get_nodal_resp(
@@ -81,8 +83,8 @@ class PlaneRespStepData(ResponseBase):
             if len(node_tags) == 0:
                 self.compute_nodal_resp = False
 
-        if self.GaussPoints is None:
-            self.GaussPoints = np.arange(strains.shape[1]) + 1
+        if self.GaussPointsNo is None:
+            self.GaussPointsNo = np.arange(strains.shape[1]) + 1
 
         if self.model_update:
             data_vars = {}
@@ -90,7 +92,7 @@ class PlaneRespStepData(ResponseBase):
             data_vars["Strains"] = (["eleTags", "GaussPoints", "strainDOFs"], strains)
             coords = {
                 "eleTags": ele_tags,
-                "GaussPoints": self.GaussPoints,
+                "GaussPoints": self.GaussPointsNo,
                 "stressDOFs": self.stressDOFs,
                 "strainDOFs": self.strainDOFs,
             }
@@ -127,7 +129,7 @@ class PlaneRespStepData(ResponseBase):
             coords = {
                 "time": self.times,
                 "eleTags": self.ele_tags,
-                "GaussPoints": self.GaussPoints,
+                "GaussPoints": self.GaussPointsNo,
                 "stressDOFs": self.stressDOFs,
                 "strainDOFs": self.strainDOFs,
             }
@@ -158,49 +160,50 @@ class PlaneRespStepData(ResponseBase):
         stresses = self.resp_steps["Stresses"]
         strains = self.resp_steps["Strains"]
 
-        stress_measures = _calculate_stresses_measures(stresses.data, dtype=self.dtype)
-        strain_measures = _calculate_stresses_measures(strains.data, dtype=self.dtype)
+        if stresses.shape[-1] >= 3:
+            stress_measures = _calculate_stresses_measures(stresses.data, dtype=self.dtype)
+            strain_measures = _calculate_stresses_measures(strains.data, dtype=self.dtype)
 
-        dims = ["time", "eleTags", "GaussPoints", "measures"]
-        coords = {
-            "time": stresses.coords["time"],
-            "eleTags": stresses.coords["eleTags"],
-            "GaussPoints": stresses.coords["GaussPoints"],
-            "measures": ["p1", "p2", "sigma_vm", "tau_max"],
-        }
-
-        self.resp_steps["StressMeasures"] = xr.DataArray(
-            stress_measures,
-            dims=dims,
-            coords=coords,
-            name="StressMeasures",
-        )
-        self.resp_steps["StrainMeasures"] = xr.DataArray(
-            strain_measures,
-            dims=dims,
-            coords=coords,
-            name="StrainMeasures",
-        )
-
-        if self.compute_nodal_resp:
-            node_stress_measures = _calculate_stresses_measures(
-                self.resp_steps["StressesAtNodes"].data, dtype=self.dtype
-            )
-            node_strain_measures = _calculate_stresses_measures(
-                self.resp_steps["StrainsAtNodes"].data, dtype=self.dtype
-            )
-            dims = ["time", "nodeTags", "measures"]
+            dims = ["time", "eleTags", "GaussPoints", "measures"]
             coords = {
                 "time": stresses.coords["time"],
-                "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
+                "eleTags": stresses.coords["eleTags"],
+                "GaussPoints": stresses.coords["GaussPoints"],
                 "measures": ["p1", "p2", "sigma_vm", "tau_max"],
             }
-            self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
-                node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
+
+            self.resp_steps["StressMeasures"] = xr.DataArray(
+                stress_measures,
+                dims=dims,
+                coords=coords,
+                name="StressMeasures",
             )
-            self.resp_steps["StrainMeasuresAtNodes"] = xr.DataArray(
-                node_strain_measures, dims=dims, coords=coords, name="StrainMeasuresAtNodes"
+            self.resp_steps["StrainMeasures"] = xr.DataArray(
+                strain_measures,
+                dims=dims,
+                coords=coords,
+                name="StrainMeasures",
             )
+
+            if self.compute_nodal_resp:
+                node_stress_measures = _calculate_stresses_measures(
+                    self.resp_steps["StressesAtNodes"].data, dtype=self.dtype
+                )
+                node_strain_measures = _calculate_stresses_measures(
+                    self.resp_steps["StrainsAtNodes"].data, dtype=self.dtype
+                )
+                dims = ["time", "nodeTags", "measures"]
+                coords = {
+                    "time": stresses.coords["time"],
+                    "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
+                    "measures": ["p1", "p2", "sigma_vm", "tau_max"],
+                }
+                self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
+                    node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
+                )
+                self.resp_steps["StrainMeasuresAtNodes"] = xr.DataArray(
+                    node_strain_measures, dims=dims, coords=coords, name="StrainMeasuresAtNodes"
+                )
 
     def get_data(self):
         return self.resp_steps
@@ -258,11 +261,12 @@ gp2node_type = {3: "tri", 6: "tri", 4: "quad", 8: "quad", 9: "quad"}
 
 # Get nodal stresses and strains from the Gauss points of elements.
 def _get_nodal_resp(ele_tags, ele_gp_resp, method, dtype):
+    # ele_gp_resp: shape (num_eles, num_gps, num_dofs)
     node_resp = defaultdict(list)
     for etag, gp_resp in zip(ele_tags, ele_gp_resp):
         etag = int(etag)
         ntags = ops.eleNodes(etag)
-        gp_resp = gp_resp[~np.isnan(gp_resp).any(axis=1)]
+        gp_resp = gp_resp[~np.isnan(gp_resp).all(axis=1)]  #
         if len(gp_resp) == 0:
             continue
         gp2node_func = get_gp2node_func(ele_type=gp2node_type[len(ntags)], n=len(ntags), gp=len(gp_resp))
@@ -302,10 +306,11 @@ def _get_gauss_resp(ele_tags, dtype):
     all_stresses, all_strains = [], []
 
     for etag in map(int, ele_tags):
-        stresses, strains = _collect_element_responses(etag)
+        stresses = np.array(_collect_element_stresses(etag))
+        strains = np.array(_collect_element_strains(etag))
         stresses, strains = _reorder_by_element_type(etag, stresses, strains)
-        all_stresses.append(np.array(stresses))
-        all_strains.append(np.array(strains))
+        all_stresses.append(_reshape_stress(stresses))
+        all_strains.append(strains)
 
     return (
         _expand_to_uniform_array(all_stresses, dtype=dtype["float"]),
@@ -313,29 +318,37 @@ def _get_gauss_resp(ele_tags, dtype):
     )
 
 
-def _collect_element_responses(etag):
-    stresses, strains = [], []
+def _collect_element_stresses(etag):
+    stresses = []
+    # stresses
     for i in range(100000000):
         s = _try_fetch(etag, i + 1, "stresses")
-        e = _try_fetch(etag, i + 1, "strains")
-        if not s or not e:
+        if not s:
             break
-        stresses.append(_reshape_stress(s))
-        strains.append(e)
-
-    if not stresses and not strains:
-        s = _reshape_stress(ops.eleResponse(etag, "stresses"))
-        e = ops.eleResponse(etag, "strains")
+        stresses.append(s)
+    if len(stresses) == 0:
+        s = ops.eleResponse(etag, "stresses")
         if s:
             stresses.append(s)
+    if len(stresses) == 0:
+        stresses.append([np.nan])
+    return stresses
+
+
+def _collect_element_strains(etag):
+    strains = []
+    for i in range(100000000):
+        e = _try_fetch(etag, i + 1, "strains")
+        if not e:
+            break
+        strains.append(e)
+    if len(strains) == 0:
+        e = ops.eleResponse(etag, "strains")
         if e:
             strains.append(e)
-
-    if not stresses:
-        stresses.append([np.nan, np.nan, np.nan, np.nan, np.nan])
-    if not strains:
-        strains.append([np.nan, np.nan, np.nan])
-    return stresses, strains
+    if len(strains) == 0:
+        strains.append([np.nan])
+    return strains
 
 
 def _try_fetch(etag, idx, key):
@@ -355,28 +368,19 @@ def _reorder_by_element_type(etag, stress, strain):
         idx = [0, 6, 8, 2, 3, 7, 5, 1, 4]
     else:
         return stress, strain
-    return [stress[i] for i in idx], [strain[i] for i in idx]
+    return np.array([stress[i] for i in idx]), np.array([strain[i] for i in idx])
 
 
 def _reshape_stress(stress):
-    if len(stress) == 5:
+    stress = np.array(stress)
+    if stress.ndim == 1:
+        stress = np.reshape(stress, (-1, 1))
+    num_stress = stress.shape[1]
+    if num_stress in [5, 4]:
         # sigma_xx, sigma_yy, sigma_zz, sigma_xy, ηr, where ηr is the ratio between the shear (deviatoric) stress and peak
         # shear strength at the current confinement (0<=ηr<=1.0).
-        stress = [stress[0], stress[1], stress[3], stress[2], stress[4]]
-    elif len(stress) == 4:
-        # sigma_xx, sigma_yy, sigma_zz, sigma_xy
-        stress = [stress[0], stress[1], stress[3], stress[2], 0.0]
-    elif len(stress) == 3:
-        # sigma_xx, sigma_yy, sigma_xy
-        stress = [stress[0], stress[1], stress[2], 0.0, 0.0]
-    elif len(stress) == 2:
-        # sigma_xx, sigma_yy
-        stress = [stress[0], stress[1], 0.0, 0.0, 0.0]
-    elif len(stress) == 1:
-        # sigma_xx
-        stress = [stress[0], 0.0, 0.0, 0.0, 0.0]
-    else:
-        stress = [0.0, 0.0, 0.0, 0.0, 0.0]
+        # # sigma_xx, sigma_yy, sigma_zz, sigma_xy if num_stress ==4
+        stress[:, [2, 3]] = stress[:, [3, 2]]
     return stress
 
 

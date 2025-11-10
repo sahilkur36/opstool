@@ -52,7 +52,7 @@ class BrickRespStepData(ResponseBase):
             "sigma_oct": "Octahedral normal stress (strains).",
             "tau_oct": "Octahedral shear stress (strains).",
         }
-        self.GaussPoints = None
+        self.GaussPointsNo = None
         self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "eta_r"]
         self.strainDOFs = ["eps11", "eps22", "eps33", "eps12", "eps23", "eps13"]
 
@@ -71,7 +71,9 @@ class BrickRespStepData(ResponseBase):
         self.initialize()
 
     def add_data_one_step(self, ele_tags):
-        stresses, strains = _get_gauss_resp(ele_tags, dtype=self.dtype)
+        stresses, strains = _get_gauss_resp(ele_tags, dtype=self.dtype)  # shape: (num_eles, num_gps, num_dofs)
+        self.stressDOFs = self.stressDOFs[: stresses.shape[2]]
+        self.strainDOFs = self.strainDOFs[: strains.shape[2]]
 
         if self.compute_nodal_resp:
             node_stress_avg, node_stress_rel_error, node_tags = _get_nodal_resp(
@@ -84,8 +86,8 @@ class BrickRespStepData(ResponseBase):
             if len(node_tags) == 0:
                 self.compute_nodal_resp = False
 
-        if self.GaussPoints is None:
-            self.GaussPoints = np.arange(stresses.shape[1]) + 1
+        if self.GaussPointsNo is None:
+            self.GaussPointsNo = np.arange(stresses.shape[1]) + 1
 
         if self.model_update:
             data_vars = {}
@@ -93,7 +95,7 @@ class BrickRespStepData(ResponseBase):
             data_vars["Strains"] = (["eleTags", "GaussPoints", "strainDOFs"], strains)
             coords = {
                 "eleTags": ele_tags,
-                "GaussPoints": self.GaussPoints,
+                "GaussPoints": self.GaussPointsNo,
                 "stressDOFs": self.stressDOFs,
                 "strainDOFs": self.strainDOFs,
             }
@@ -129,7 +131,7 @@ class BrickRespStepData(ResponseBase):
             coords = {
                 "time": self.times,
                 "eleTags": self.ele_tags,
-                "GaussPoints": self.GaussPoints,
+                "GaussPoints": self.GaussPointsNo,
                 "stressDOFs": self.stressDOFs,
                 "strainDOFs": self.strainDOFs,
             }
@@ -160,48 +162,49 @@ class BrickRespStepData(ResponseBase):
         stresses = self.resp_steps["Stresses"]
         strains = self.resp_steps["Strains"]
 
-        stress_measures = _calculate_stresses_measures_4D(stresses.data, dtype=self.dtype)
-        strain_measures = _calculate_stresses_measures_4D(strains.data, dtype=self.dtype)
+        if stresses.shape[-1] >= 6:
+            stress_measures = _calculate_stresses_measures_4D(stresses.data, dtype=self.dtype)
+            strain_measures = _calculate_stresses_measures_4D(strains.data, dtype=self.dtype)
 
-        dims = ["time", "eleTags", "GaussPoints", "measures"]
-        coords = {
-            "time": stresses.coords["time"],
-            "eleTags": stresses.coords["eleTags"],
-            "GaussPoints": stresses.coords["GaussPoints"],
-            "measures": ["p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"],
-        }
-
-        self.resp_steps["StressMeasures"] = xr.DataArray(
-            stress_measures,
-            dims=dims,
-            coords=coords,
-            name="StressMeasures",
-        )
-        self.resp_steps["StrainMeasures"] = xr.DataArray(
-            strain_measures,
-            dims=dims,
-            coords=coords,
-            name="StrainMeasures",
-        )
-        if self.compute_nodal_resp:
-            node_stress_measures = _calculate_stresses_measures_4D(
-                self.resp_steps["StressesAtNodes"].data, dtype=self.dtype
-            )
-            node_strain_measures = _calculate_stresses_measures_4D(
-                self.resp_steps["StrainsAtNodes"].data, dtype=self.dtype
-            )
-            dims = ["time", "nodeTags", "measures"]
+            dims = ["time", "eleTags", "GaussPoints", "measures"]
             coords = {
                 "time": stresses.coords["time"],
-                "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
+                "eleTags": stresses.coords["eleTags"],
+                "GaussPoints": stresses.coords["GaussPoints"],
                 "measures": ["p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"],
             }
-            self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
-                node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
+
+            self.resp_steps["StressMeasures"] = xr.DataArray(
+                stress_measures,
+                dims=dims,
+                coords=coords,
+                name="StressMeasures",
             )
-            self.resp_steps["StrainMeasuresAtNodes"] = xr.DataArray(
-                node_strain_measures, dims=dims, coords=coords, name="StrainMeasuresAtNodes"
+            self.resp_steps["StrainMeasures"] = xr.DataArray(
+                strain_measures,
+                dims=dims,
+                coords=coords,
+                name="StrainMeasures",
             )
+            if self.compute_nodal_resp:
+                node_stress_measures = _calculate_stresses_measures_4D(
+                    self.resp_steps["StressesAtNodes"].data, dtype=self.dtype
+                )
+                node_strain_measures = _calculate_stresses_measures_4D(
+                    self.resp_steps["StrainsAtNodes"].data, dtype=self.dtype
+                )
+                dims = ["time", "nodeTags", "measures"]
+                coords = {
+                    "time": stresses.coords["time"],
+                    "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
+                    "measures": ["p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"],
+                }
+                self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
+                    node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
+                )
+                self.resp_steps["StrainMeasuresAtNodes"] = xr.DataArray(
+                    node_strain_measures, dims=dims, coords=coords, name="StrainMeasuresAtNodes"
+                )
 
     def get_data(self):
         return self.resp_steps
@@ -264,7 +267,7 @@ def _get_nodal_resp(ele_tags, ele_gp_resp, method, dtype):
     for etag, gp_resp in zip(ele_tags, ele_gp_resp):
         etag = int(etag)
         ntags = ops.eleNodes(etag)
-        gp_resp = gp_resp[~np.isnan(gp_resp).any(axis=1)]
+        gp_resp = gp_resp[~np.isnan(gp_resp).all(axis=1)]
         if len(gp_resp) == 0:
             continue
         gp2node_func = get_gp2node_func(ele_type=gp2node_type[len(ntags)], n=len(ntags), gp=len(gp_resp))
@@ -322,9 +325,9 @@ def _get_gauss_resp(ele_tags, dtype: dict):
                 integr_point_strain.append(strain)
         # Finally, if void set to 0.0
         if len(integr_point_stress) == 0:
-            integr_point_stress.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+            integr_point_stress.append([np.nan])
         if len(integr_point_strain) == 0:
-            integr_point_strain.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+            integr_point_strain.append([np.nan])
 
         all_stresses.append(np.array(integr_point_stress))
         all_strains.append(np.array(integr_point_strain))
@@ -342,12 +345,6 @@ def _get_gp_resp_by_one(etag, i):
         strain_ = ops.eleResponse(etag, "integrPoint", f"{i + 1}", "strains")
     if len(stress_) == 0 or len(strain_) == 0:
         return None, None
-    if len(stress_) == 6:
-        stress_ = [*stress_, 0.0]  # add eta_r as 0.0
-    elif len(stress_) > 6:
-        stress_ = stress_[:7]
-    elif len(stress_) < 6:
-        stress_ = stress_ + [0.0] * (7 - len(stress_))
     return stress_, strain_
 
 

@@ -2,7 +2,7 @@
 
 [![pypi](https://img.shields.io/pypi/v/opstool)](https://pypi.org/project/opstool/)
 [![Downloads](https://static.pepy.tech/badge/opstool)](https://pepy.tech/project/opstool)
-[![Documentation Status](https://readthedocs.org/projects/opstool/badge/?version=latest)](https://opstool.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/opstool-doc/badge/?version=latest)](https://opstool-doc.readthedocs.io/en/latest/?badge=latest)
 [![github stars](https://img.shields.io/github/stars/yexiang1992/opstool?style=social)](https://github.com/yexiang1992/opstool)
 [![GitHub License](https://img.shields.io/github/license/yexiang1992/opstool?style=flat)](https://img.shields.io/github/license/yexiang1992/opstool?style=flat)
 [![CodeFactor](https://www.codefactor.io/repository/github/yexiang92/opstool/badge)](https://www.codefactor.io/repository/github/yexiang92/opstool)
@@ -44,7 +44,9 @@ pip install opstool
 
 **Stable**: See [https://opstool.readthedocs.io/en/stable/](https://opstool.readthedocs.io/en/stable/) -->
 
-**Latest**: See [https://opstool-doc.vercel.app/](https://opstool-doc.vercel.app/).
+**Latest**: See [https://opstool-doc.readthedocs.io/en/latest/](https://opstool-doc.readthedocs.io/en/latest/).
+
+**For v1.0.20 and earlier versions**  See [https://opstool.readthedocs.io/en/v1.0.20/](https://opstool.readthedocs.io/en/v1.0.20/)
 
 > [!TIP]
 > Since an opstool version **v1.0.1**, the API and features have undergone significant changes and upgrades. As a result, it feels more like a new library, and you should take some time to familiarize yourself with the new interface usage.

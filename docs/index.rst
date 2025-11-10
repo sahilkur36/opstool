@@ -73,6 +73,10 @@
 
 ----------------
 
+.. note::
+
+   **For v1.0.20 and earlier document versions**  See `https://opstool.readthedocs.io/en/v1.0.20/ <https://opstool.readthedocs.io/en/v1.0.20/>`_.
+
 .. grid:: 1 1 2 2
    :gutter: 2
 

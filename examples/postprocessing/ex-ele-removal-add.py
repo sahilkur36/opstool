@@ -422,7 +422,7 @@ def analysisLib(
     for seg in segs:
         ok = analysis.StaticAnalyze(node=ctrl_node, dof=2, seg=seg)  # node tag 1, dof 2
         if ok < 0:
-            raise RuntimeError("Analysis failed")
+            raise RuntimeError("Analysis failed")  # noqa: TRY003
 
         # Fetch response
         ODB.fetch_response_step()
@@ -449,7 +449,7 @@ model_info = triangleStruc(top_free=True, base_free=True, info=True)
 ops.remove("ele", model_info.remove_ele)
 
 # Create data base
-ODB = opst.post.CreateODB(odb_tag=CASE_1, fiber_ele_tags="ALL", model_update=True)
+ODB = opst.post.CreateODB(odb_tag=CASE_1, save_fiber_sec_resp=True, fiber_ele_tags=[1, 2, 3, 4], model_update=True)
 
 # Linear timeSeries
 ts = 1
@@ -703,3 +703,9 @@ print(f"ODB_ele_link.eleTags: {ODB_ele_Link.eleTags.values}")
 # Check zeroLengthSection element
 ODB_ele_sec = opst.post.get_element_responses(odb_tag=CASE_2, ele_type="FiberSection", print_info=False)
 print(f"ODB_ele_sec.eleTags: {ODB_ele_sec.eleTags.values}")
+
+# %%
+print(ODB_ele_sec.data_vars)
+
+# %%
+print(ODB_ele_sec.data_vars["ys"])

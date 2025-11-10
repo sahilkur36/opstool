@@ -113,3 +113,8 @@ plt.show()
 
 # %%
 opst.post.get_element_responses(odb_tag="FSI", ele_type="Brick")
+
+# %%
+opst.post.get_element_responses(odb_tag="FSI", ele_type="Plane")
+
+# %%

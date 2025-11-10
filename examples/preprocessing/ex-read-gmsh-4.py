@@ -3,6 +3,7 @@ Gmsh2OPS: Linear shell arch model
 ==================================
 """
 
+# %%
 import openseespy.opensees as ops
 
 import opstool as opst
@@ -90,7 +91,7 @@ opst.pre.create_gravity_load(direction="z", factor=-9.81)
 # ---------------------
 
 # sphinx_gallery_thumbnail_number = 2
-fig = opst.vis.pyvista.plot_eigen(mode_tags=[1, 6], subplots=True)
+fig = opst.vis.pyvista.plot_eigen(mode_tags=[1, 8], subplots=True)
 fig.show()
 
 # %%

@@ -100,6 +100,10 @@ plt.show()
 # ++++++++++++++++++++++++++
 
 PlaneResp = opst.post.get_element_responses(odb_tag=1, ele_type="Plane")
+print(PlaneResp.coords)
+
+# %%
+print(PlaneResp["Stresses"])
 
 # %%
 s = PlaneResp["Stresses"].sel(eleTags=37, GaussPoints=1, stressDOFs="sigma12")
@@ -118,7 +122,6 @@ plt.show()
 opsvis.set_plot_props(
     cmap="Spectral_r",
     point_size=0.0,
-    notebook=True,
     scalar_bar_kargs={"title_font_size": 12, "label_font_size": 12, "position_x": 0.865},
     show_mesh_edges=False,
 )

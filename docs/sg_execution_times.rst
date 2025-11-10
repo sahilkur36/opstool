@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**03:24.769** total execution time for 21 files **from all galleries**:
+**00:16.255** total execution time for 21 files **from all galleries**:
 
 .. container::
 
@@ -32,26 +32,26 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-ssi-Gu.py` (``..\examples\postprocessing\ex-ssi-Gu.py``)
-     - 02:10.405
+   * - :ref:`sphx_glr_auto_examples_examples_vis_ex-vis-megatall.py` (``..\examples\vis\ex-vis-megatall.py``)
+     - 00:07.090
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-nonlinear-frame-transient.py` (``..\examples\postprocessing\ex-nonlinear-frame-transient.py``)
-     - 00:49.211
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-sec-props.py` (``..\examples\sec-mesh\ex-sec-props.py``)
+     - 00:03.593
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-3.py` (``..\examples\preprocessing\ex-read-gmsh-3.py``)
-     - 00:16.326
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-4.py` (``..\examples\preprocessing\ex-read-gmsh-4.py``)
+     - 00:02.059
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-fsi-gu.py` (``..\examples\postprocessing\ex-fsi-gu.py``)
-     - 00:03.022
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-rc-section.py` (``..\examples\sec-mesh\ex-rc-section.py``)
+     - 00:01.202
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-2.py` (``..\examples\preprocessing\ex-read-gmsh-2.py``)
-     - 00:02.579
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-composite.py` (``..\examples\sec-mesh\ex-composite.py``)
+     - 00:00.885
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-1.py` (``..\examples\preprocessing\ex-read-gmsh-1.py``)
-     - 00:01.845
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-bridge-deck.py` (``..\examples\sec-mesh\ex-bridge-deck.py``)
+     - 00:00.849
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-sensitivity2.py` (``..\examples\postprocessing\ex-sensitivity2.py``)
-     - 00:01.381
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-cfst.py` (``..\examples\sec-mesh\ex-cfst.py``)
+     - 00:00.577
      - 0.0
    * - :ref:`sphx_glr_auto_examples_quick-start_ex-frame2D.py` (``quick-start\ex-frame2D.py``)
      - 00:00.000
@@ -74,24 +74,24 @@ Computation times
    * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-forma11c.py` (``..\examples\postprocessing\ex-forma11c.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-4.py` (``..\examples\preprocessing\ex-read-gmsh-4.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-fsi-gu.py` (``..\examples\postprocessing\ex-fsi-gu.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-bridge-deck.py` (``..\examples\sec-mesh\ex-bridge-deck.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-nonlinear-frame-transient.py` (``..\examples\postprocessing\ex-nonlinear-frame-transient.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-cfst.py` (``..\examples\sec-mesh\ex-cfst.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-sensitivity2.py` (``..\examples\postprocessing\ex-sensitivity2.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-composite.py` (``..\examples\sec-mesh\ex-composite.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-ssi-Gu.py` (``..\examples\postprocessing\ex-ssi-Gu.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-rc-section.py` (``..\examples\sec-mesh\ex-rc-section.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-1.py` (``..\examples\preprocessing\ex-read-gmsh-1.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-sec-props.py` (``..\examples\sec-mesh\ex-sec-props.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-2.py` (``..\examples\preprocessing\ex-read-gmsh-2.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_vis_ex-vis-megatall.py` (``..\examples\vis\ex-vis-megatall.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-3.py` (``..\examples\preprocessing\ex-read-gmsh-3.py``)
      - 00:00.000
      - 0.0

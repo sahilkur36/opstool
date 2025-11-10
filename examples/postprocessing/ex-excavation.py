@@ -10,6 +10,7 @@ The python model script can be found here
 `excavation.py <https://ln5.sync.com/dl/41ad07bf0#ice8pjty-62im9fq9-qegdsiq6-rubwni3n>`_
 """
 
+# %%
 import openseespy.opensees as ops
 
 # %%
@@ -265,7 +266,7 @@ import opstool.vis.pyvista as opsvis
 
 # %%
 # Since the result data has already been saved, we can read it at any time for post-processing:
-opsvis.set_plot_props(point_size=0, line_width=5, cmap="turbo", notebook=True)
+opsvis.set_plot_props(point_size=0, line_width=5, cmap="turbo")
 opsvis.set_plot_props(
     scalar_bar_kargs={
         "label_font_size": 12,

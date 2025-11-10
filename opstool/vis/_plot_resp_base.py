@@ -56,7 +56,7 @@ class PlotResponseBase:
             dims = self.ModelInfoSteps[key].dims
             if self.ModelUpdate:
                 da = self.ModelInfoSteps[key].isel(time=idx)
-                da = da.dropna(dim=dims[1], how="any")
+                da = da.dropna(dim=dims[1], how="any")  # drop nodes/eles that do not exist in this step
             else:
                 da = self.ModelInfoSteps[key].isel(time=0)
             # tags = da.coords[dims[1]].values

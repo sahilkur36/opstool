@@ -66,7 +66,7 @@ _POST_ARGS = SimpleNamespace(
     save_truss_resp=True,
     save_link_resp=True,
     save_shell_resp=True,
-    save_fiber_sec_resp=True,
+    save_fiber_sec_resp=False,
     save_plane_resp=True,
     save_brick_resp=True,
     save_contact_resp=True,
@@ -321,6 +321,8 @@ class CreateODB:
             else:
                 if _fiber_ele_tags.lower() != "all":
                     _fiber_ele_tags = None
+        if _fiber_ele_tags is not None:
+            _save_fiber_sec_resp = True
 
         if _fiber_ele_tags is not None and _save_fiber_sec_resp:
             if self._FiberSecResp is None:

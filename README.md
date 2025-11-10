@@ -1,4 +1,4 @@
-# opstoo: Pre-Processing, Post-Processing, and Visualization for OpenSeesPy and OpenSees
+# opstool: Pre-Processing, Post-Processing, and Visualization for OpenSeesPy and OpenSees
 
 [![pypi](https://img.shields.io/pypi/v/opstool)](https://pypi.org/project/opstool/)
 [![Downloads](https://static.pepy.tech/badge/opstool)](https://pepy.tech/project/opstool)

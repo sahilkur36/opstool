@@ -35,25 +35,51 @@ class ResponseBase(ABC):
 
 def _expand_to_uniform_array(array_list, dtype=None):
     """
-    Convert a list of NumPy arrays with varying shapes into a single 2D/3D NumPy array,
-    padding with NaN where dimensions do not match.
+    Convert a list of NumPy arrays with varying dimensions and shapes into a single
+    uniform NumPy array, padding with NaN where dimensions do not match.
 
     Parameters:
-    array_list (list): List of NumPy arrays with varying shapes.
+        array_list (list): List of NumPy arrays with different dimensions and shapes
+        dtype: Optional, data type of the returned array
 
     Returns:
-    np.ndarray: A padded NumPy array with uniform shape.
+        np.ndarray: A padded NumPy array with uniform shape
     """
-    # Find the maximum shape along each dimension
-    max_shape = np.max([array.shape for array in array_list], axis=0)
+    if not array_list:
+        return np.array([])
 
-    # Create a result array filled with NaN
-    result = np.full((len(array_list), *tuple(max_shape)), np.nan)
+    # Ensure all elements are numpy arrays
+    array_list = [np.asarray(arr) for arr in array_list]
 
-    # Copy data into the result array
+    # Find the maximum number of dimensions
+    max_ndim = max(arr.ndim for arr in array_list)
+
+    # Find the maximum size for each dimension
+    max_shape = []
+    for dim in range(max_ndim):
+        max_size = 0
+        for arr in array_list:
+            if dim < arr.ndim:
+                max_size = max(max_size, arr.shape[dim])
+        max_shape.append(max_size)
+
+    # Create result array, first dimension is the number of arrays
+    result = np.full((len(array_list), *max_shape), np.nan)
+
+    # Copy each array into the result
     for i, arr in enumerate(array_list):
+        # Create slices for each dimension of the current array
         slices = tuple(slice(0, dim) for dim in arr.shape)
-        result[i][slices] = arr
+
+        # If array has fewer dimensions than max, need to pad higher dimensions
+        if arr.ndim < max_ndim:
+            # Add slices for missing dimensions (take first position)
+            full_slices = slices + tuple(slice(0, 1) for _ in range(max_ndim - arr.ndim))
+            result[i][full_slices] = arr.reshape(arr.shape + (1,) * (max_ndim - arr.ndim))
+        else:
+            result[i][slices] = arr
+
     if dtype is not None:
         result = result.astype(dtype)
+
     return result

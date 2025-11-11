@@ -3,6 +3,7 @@ from ._util_funcs import (
     _check_odb_path,
     add_ops_hints_file,
     check_file_type,
+    get_bounds,
     get_color_rich,
     get_cycle_color,
     get_cycle_color_rich,
@@ -12,6 +13,7 @@ from ._util_funcs import (
     make_dependency_missing,
     on_notebook,
     print_version,
+    set_odb_format,
     set_odb_path,
     suppress_ops_print,
 )
@@ -33,6 +35,7 @@ __all__ = [
     "add_ops_hints_file",
     # -----------------------
     "check_file_type",
+    "get_bounds",
     "get_color_rich",
     "get_cycle_color",
     "get_cycle_color_rich",
@@ -44,6 +47,7 @@ __all__ = [
     "on_notebook",
     "print_version",
     "run_model",
+    "set_odb_format",
     "set_odb_path",
     "suppress_ops_print",
 ]

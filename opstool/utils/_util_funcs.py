@@ -22,6 +22,28 @@ def _check_odb_path():
         os.mkdir(RESULTS_DIR)
 
 
+def set_odb_format(odb_format: str):
+    """Set the output format for the results saving.
+
+    .. note::
+        This will affect the format of the saved ODB files.
+        ``zarr`` usually provides better performance and smaller file size, and is therefore the default format.
+
+    Parameters:
+    ------------
+    format: str
+        The output format, options are 'zarr' and 'nc'.
+    """
+    if odb_format.lower() in ["netcdf4", "nc"]:
+        CONFIGS.ODB_ENGINE = "netcdf4"
+        CONFIGS.ODB_FORMAT = "nc"
+    elif odb_format.lower() == "zarr":
+        CONFIGS.ODB_ENGINE = "zarr"
+        CONFIGS.ODB_FORMAT = "zarr"
+    else:
+        raise ValueError("format must be 'zarr' or 'nc' or 'netcdf4'!")  # noqa: TRY003
+
+
 def set_odb_path(path: str):
     """Set the output directory for the results saving.
 
@@ -233,3 +255,23 @@ def make_dependency_missing(name: str, dependency: str, extra=None):
             _raise()
 
     return Missing()
+
+
+def get_bounds(node_coords):
+    min_node = np.min(node_coords, axis=0)
+    max_node = np.max(node_coords, axis=0)
+    bounds = (
+        min_node[0],
+        max_node[0],
+        min_node[1],
+        max_node[1],
+        min_node[2],
+        max_node[2],
+    )
+    sizes = [
+        max_node[0] - min_node[0],
+        max_node[1] - min_node[1],
+        max_node[2] - min_node[2],
+    ]
+    min_bound, max_bound = np.min(sizes), np.max(sizes)
+    return bounds, min_bound, max_bound

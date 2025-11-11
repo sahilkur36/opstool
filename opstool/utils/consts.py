@@ -18,6 +18,9 @@ class CONFIGS:
     EIGEN_FILE_NAME = "EigenData"
     RESP_FILE_NAME = "RespStepData"
 
+    ODB_FORMAT = "zarr"  # or 'netcdf4'
+    ODB_ENGINE = "zarr"  # or 'netcdf4'
+
     # shape dict used to subplots
     SHAPE_MAP = {  # noqa: RUF012
         1: (1, 1),
@@ -95,6 +98,10 @@ class CONFIGS:
     @classmethod
     def get_output_dir(cls):
         return cls.RESULTS_DIR
+
+    @classmethod
+    def get_odb_format(cls):
+        return cls.ODB_FORMAT, cls.ODB_ENGINE
 
     @classmethod
     def get_pkg_prefix(cls):

@@ -20,6 +20,7 @@ from ._get_response import (
     ShellRespStepData,
     TrussRespStepData,
 )
+from ._post_utils import generate_chunk_encoding_for_datatree
 from ._unit_postprocess import get_post_unit_multiplier, get_post_unit_symbol
 from .eigen_data import save_eigen_data
 from .model_data import save_model_data
@@ -441,17 +442,22 @@ class CreateODB:
             If True, the data is saved compressed,
             which is useful when your result files are expected to be large,
             especially if model updating is turned on.
+            This option is only valid when ``odb_format`` is set to "nc".
         """
         RESULTS_DIR = CONFIGS.get_output_dir()
         CONSOLE = CONFIGS.get_console()
         PKG_PREFIX = CONFIGS.get_pkg_prefix()
         RESP_FILE_NAME = CONFIGS.get_resp_filename()
+        odb_format, _ = CONFIGS.get_odb_format()
 
-        filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{self._odb_tag}.nc"
-        self._save_response_nc(filename, zlib=zlib)
-
-        # filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{self._odb_tag}.zarr"
-        # self._save_response_zarr(filename)
+        if odb_format.lower() == "zarr":
+            filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{self._odb_tag}.zarr"
+            self._save_response_zarr(filename)
+        elif odb_format.lower() == "nc":
+            filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{self._odb_tag}.nc"
+            self._save_response_nc(filename, zlib=zlib)
+        else:
+            raise ValueError(f"Unsupported format {odb_format}!")  # noqa: TRY003
 
         color = get_random_color()
         CONSOLE.print(
@@ -465,7 +471,9 @@ class CreateODB:
             for resp in self._get_resp():
                 if resp is not None:
                     resp.add_to_datatree(dt)
-            dt.to_zarr(filename, mode="w", consolidated=False)
+            # Generate encoding
+            encoding = generate_chunk_encoding_for_datatree(dt, target_chunk_mb=10.0)
+            dt.to_zarr(filename, mode="w", consolidated=True, encoding=encoding, zarr_format=2)
 
     def _save_response_nc(self, filename, zlib=False):
         """Save response data to a NetCDF file."""
@@ -522,8 +530,11 @@ def loadODB(obd_tag, resp_type: str = "Nodal", verbose: bool = True):
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     RESP_FILE_NAME = CONFIGS.get_resp_filename()
 
-    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{obd_tag}.nc"
-    dt = xr.open_datatree(filename, engine="netcdf4")
+    suffix, engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if suffix == "zarr" else {}
+
+    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{obd_tag}.{suffix}"
+    dt = xr.open_datatree(filename, engine=engine, **kargs)
     if verbose:
         color = get_random_color()
         CONSOLE.print(f"{PKG_PREFIX} Loading response data from [bold {color}]{filename}[/] ...")
@@ -603,13 +614,16 @@ def get_model_data(odb_tag: Optional[Union[int, str]] = None, data_type: str = "
         data_type = "BrickData"
     else:
         raise ValueError(f"Data type {data_type} not found.")  # noqa: TRY003
+
+    suffix, engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if suffix == "zarr" else {}
     if from_responses:
-        filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.nc"
-        with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+        filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.{suffix}"
+        with xr.open_datatree(filename, engine=engine, **kargs).load() as dt:
             data = ModelInfoStepData.read_data(dt, data_type)
     else:
-        filename = f"{RESULTS_DIR}/" + f"{MODEL_FILE_NAME}-{odb_tag}.nc"
-        with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+        filename = f"{RESULTS_DIR}/" + f"{MODEL_FILE_NAME}-{odb_tag}.{suffix}"
+        with xr.open_datatree(filename, engine=engine, **kargs).load() as dt:
             if data_type not in dt["ModelInfo"]:
                 raise ValueError(f"Data type {data_type} not found in model data.")  # noqa: TRY003
             data = dt["ModelInfo"][data_type][data_type]
@@ -676,8 +690,11 @@ def get_nodal_responses(
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     RESP_FILE_NAME = CONFIGS.get_resp_filename()
 
-    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.nc"
-    dt = xr.open_datatree(filename, engine="netcdf4")
+    suffix, engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if suffix == "zarr" else {}
+
+    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.{suffix}"
+    dt = xr.open_datatree(filename, engine=engine, **kargs)
     if print_info:
         color = get_random_color()
         if resp_type is None:
@@ -780,8 +797,11 @@ def get_element_responses(
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     RESP_FILE_NAME = CONFIGS.get_resp_filename()
 
-    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.nc"
-    dt = xr.open_datatree(filename, engine="netcdf4")
+    suffix, engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if suffix == "zarr" else {}
+
+    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.{suffix}"
+    dt = xr.open_datatree(filename, engine=engine, **kargs)
     if print_info:
         color = get_random_color()
         if resp_type is None:
@@ -866,8 +886,11 @@ def get_sensitivity_responses(
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     RESP_FILE_NAME = CONFIGS.get_resp_filename()
 
-    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.nc"
-    dt = xr.open_datatree(filename, engine="netcdf4")
+    suffix, engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if suffix == "zarr" else {}
+
+    filename = f"{RESULTS_DIR}/" + f"{RESP_FILE_NAME}-{odb_tag}.{suffix}"
+    dt = xr.open_datatree(filename, engine=engine, **kargs)
     if print_info:
         color = get_random_color()
         if resp_type is None:

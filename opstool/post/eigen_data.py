@@ -6,6 +6,7 @@ import openseespy.opensees as ops
 import xarray as xr
 
 from ..utils import CONFIGS, get_random_color
+from ._post_utils import generate_chunk_encoding_for_datatree
 from .model_data import GetFEMData
 
 
@@ -137,8 +138,9 @@ def save_eigen_data(
     CONSOLE = CONFIGS.get_console()
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     EIGEN_FILE_NAME = CONFIGS.get_eigen_filename()
+    odb_format, _ = CONFIGS.get_odb_format()
 
-    output_filename = RESULTS_DIR + "/" + f"{EIGEN_FILE_NAME}-{odb_tag}.nc"
+    output_filename = RESULTS_DIR + "/" + f"{EIGEN_FILE_NAME}-{odb_tag}.{odb_format}"
     # -----------------------------------------------------------------
     model_info, _ = GetFEMData().get_model_info()
     if model_info == {}:
@@ -150,7 +152,11 @@ def save_eigen_data(
     eigen_data["Eigen/ModalProps"] = xr.Dataset({modal_props.name: modal_props})
     eigen_data["Eigen/EigenVectors"] = xr.Dataset({eigen_vectors.name: eigen_vectors})
     dt = xr.DataTree.from_dict(eigen_data, name=f"{EIGEN_FILE_NAME}")
-    dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
+    if odb_format.lower() == "zarr":
+        encoding = generate_chunk_encoding_for_datatree(dt, target_chunk_mb=10.0)
+        dt.to_zarr(output_filename, mode="w", consolidated=True, encoding=encoding, zarr_format=2)
+    else:
+        dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
     # -----------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Eigen data has been saved to [bold {color}]{output_filename}[/]!")
@@ -167,8 +173,10 @@ def load_eigen_data(
     CONSOLE = CONFIGS.get_console()
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     EIGEN_FILE_NAME = CONFIGS.get_eigen_filename()
+    odb_format, odb_engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if odb_format.lower() == "zarr" else {}
 
-    filename = f"{RESULTS_DIR}/" + f"{EIGEN_FILE_NAME}-{odb_tag}.nc"
+    filename = f"{RESULTS_DIR}/" + f"{EIGEN_FILE_NAME}-{odb_tag}.{odb_format}"
     if not os.path.exists(filename):
         resave = True
     if resave:
@@ -176,7 +184,7 @@ def load_eigen_data(
     else:
         color = get_random_color()
         CONSOLE.print(f"{PKG_PREFIX} Loading eigen data from [bold {color}]{filename}[/] ...")
-    with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+    with xr.open_datatree(filename, engine=odb_engine, **kargs).load() as dt:
         model_info = {}
         for key, value in dt["ModelInfo"].items():
             model_info[key] = value[key]

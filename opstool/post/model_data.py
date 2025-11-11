@@ -10,6 +10,7 @@ import xarray as xr
 
 from ..utils import CONFIGS, get_random_color
 from ._get_model_data_base import FEMData
+from ._post_utils import generate_chunk_encoding_for_datatree
 
 
 class GetFEMData(FEMData):
@@ -27,7 +28,7 @@ class GetFEMData(FEMData):
             )
             node_data.name = "NodalData"
             node_data.attrs = {
-                "bounds": self.bounds,  # must tuple
+                # "bounds": tuple(self.bounds),  # must tuple
                 "numNodes": len(self.node_tags),
                 "minBoundSize": self.min_bound,
                 "maxBoundSize": self.max_bound,
@@ -421,8 +422,9 @@ def save_model_data(
     CONSOLE = CONFIGS.get_console()
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     MODEL_FILE_NAME = CONFIGS.get_model_filename()
+    odb_format, _ = CONFIGS.get_odb_format()
 
-    output_filename = RESULTS_DIR + "/" + f"{MODEL_FILE_NAME}-{odb_tag}.nc"
+    output_filename = RESULTS_DIR + "/" + f"{MODEL_FILE_NAME}-{odb_tag}.{odb_format}"
     model_data = GetFEMData()
     model_info, cells = model_data.get_model_info()
     model_data = {}
@@ -435,7 +437,12 @@ def save_model_data(
         CONSOLE.print(f"{PKG_PREFIX} No model data to be saved!")
         raise RuntimeError()
     dt = xr.DataTree.from_dict(model_data, name=f"{MODEL_FILE_NAME}")
-    dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
+
+    if odb_format.lower() == "zarr":
+        encoding = generate_chunk_encoding_for_datatree(dt, target_chunk_mb=10.0)
+        dt.to_zarr(output_filename, mode="w", consolidated=True, encoding=encoding, zarr_format=2)
+    else:
+        dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
     # --------------------------------------------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Model data has been saved to [bold {color}]{output_filename}[/]!")
@@ -468,7 +475,9 @@ def load_model_data(
         model_data = GetFEMData()
         model_info, cells = model_data.get_model_info()
     else:
-        filename = f"{RESULTS_DIR}/" + f"{MODEL_FILE_NAME}-{odb_tag}.nc"
+        odb_format, odb_engine = CONFIGS.get_odb_format()
+        kargs = {"consolidated": False} if odb_format.lower() == "zarr" else {}
+        filename = f"{RESULTS_DIR}/" + f"{MODEL_FILE_NAME}-{odb_tag}.{odb_format}"
         if not os.path.exists(filename):
             resave = True
         if resave:
@@ -477,7 +486,7 @@ def load_model_data(
             color = get_random_color()
             CONSOLE.print(f"{PKG_PREFIX} Loading model data from [bold {color}]{filename}[/] ...")
         model_info, cells = {}, {}
-        with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+        with xr.open_datatree(filename, engine=odb_engine, **kargs).load() as dt:
             if "ModelInfo" in dt:
                 for key, value in dt["ModelInfo"].items():
                     model_info[key] = value[key]

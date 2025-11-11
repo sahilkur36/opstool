@@ -6,6 +6,7 @@ import scipy.linalg as slin
 import xarray as xr
 
 from ..utils import CONFIGS, get_random_color
+from ._post_utils import generate_chunk_encoding_for_datatree
 from .model_data import GetFEMData
 
 
@@ -103,11 +104,12 @@ def save_linear_buckling_data(
     CONSOLE = CONFIGS.get_console()
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     BUCKLING_FILE_NAME = "LinearBucklingData"
+    odb_format, _ = CONFIGS.get_odb_format()
 
     if not isinstance(kmat, xr.DataArray) or not isinstance(kgeo, xr.DataArray):
         raise TypeError("kmat and kgeo must be xarray.DataArray objects.")  # noqa: TRY003
 
-    output_filename = RESULTS_DIR + "/" + f"{BUCKLING_FILE_NAME}-{odb_tag}.nc"
+    output_filename = RESULTS_DIR + "/" + f"{BUCKLING_FILE_NAME}-{odb_tag}.{odb_format}"
     # -----------------------------------------------------------------
     model_info, _ = GetFEMData().get_model_info()
     if model_info == {}:
@@ -119,7 +121,11 @@ def save_linear_buckling_data(
     eigen_data[f"LinearBuckling/{eigenvalues.name}"] = xr.Dataset({eigenvalues.name: eigenvalues})
     eigen_data[f"LinearBuckling/{eigenvectors.name}"] = xr.Dataset({eigenvectors.name: eigenvectors})
     dt = xr.DataTree.from_dict(eigen_data, name=BUCKLING_FILE_NAME)
-    dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
+    if odb_format.lower() == "zarr":
+        encoding = generate_chunk_encoding_for_datatree(dt, target_chunk_mb=10.0)
+        dt.to_zarr(output_filename, mode="w", consolidated=True, encoding=encoding, zarr_format=2)
+    else:
+        dt.to_netcdf(output_filename, mode="w", engine="netcdf4")
     # -----------------------------------------------------------------
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Linear Buckling data has been saved to [bold {color}]{output_filename}[/]!")
@@ -131,11 +137,13 @@ def load_linear_buckling_data(odb_tag: Union[str, int]):
     CONSOLE = CONFIGS.get_console()
     PKG_PREFIX = CONFIGS.get_pkg_prefix()
     BUCKLING_FILE_NAME = "LinearBucklingData"
+    odb_format, odb_engine = CONFIGS.get_odb_format()
+    kargs = {"consolidated": False} if odb_format.lower() == "zarr" else {}
 
-    filename = RESULTS_DIR + "/" + f"{BUCKLING_FILE_NAME}-{odb_tag}.nc"
+    filename = RESULTS_DIR + "/" + f"{BUCKLING_FILE_NAME}-{odb_tag}.{odb_format}"
     color = get_random_color()
     CONSOLE.print(f"{PKG_PREFIX} Loading Linear Buckling data from [bold {color}]{filename}[/] ...")
-    with xr.open_datatree(filename, engine="netcdf4").load() as dt:
+    with xr.open_datatree(filename, engine=odb_engine, **kargs).load() as dt:
         model_info = {}
         for key, value in dt["ModelInfo"].items():
             model_info[key] = value[key]

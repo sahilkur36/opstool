@@ -5,7 +5,7 @@ import numpy as np
 import pyvista as pv
 
 from ...post import load_eigen_data, load_linear_buckling_data
-from ...utils import CONFIGS
+from ...utils import CONFIGS, get_bounds
 from .plot_resp_base import PlotResponsePyvistaBase, slider_widget_args
 from .plot_utils import PLOT_ARGS, _plot_all_mesh_cmap
 from .vis_model import PlotModelBase
@@ -21,9 +21,7 @@ class PlotEigenBase(PlotResponsePyvistaBase):
             self.nodal_tags = self.nodal_data.coords["nodeTags"]
             self.points = self.nodal_data.to_numpy()
             self.ndims = self.nodal_data.attrs["ndims"]
-            self.bounds = self.nodal_data.attrs["bounds"]
-            self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
-            self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
+            self.bounds, self.min_bound_size, self.max_bound_size = get_bounds(self.points)
             self.show_zaxis = not np.max(self.ndims) <= 2
         else:
             raise ValueError("Model have no nodal data!")  # noqa: TRY003

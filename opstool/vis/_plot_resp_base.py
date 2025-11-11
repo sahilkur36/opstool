@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import xarray as xr
 
-from ..utils import CONFIGS
+from ..utils import CONFIGS, get_bounds
 
 
 class PlotResponseBase:
@@ -23,9 +23,7 @@ class PlotResponseBase:
 
         self.points_origin = self._get_node_da(0).to_numpy()
         self.points = self.points_origin.copy()
-        self.bounds = self._get_node_da(0).attrs["bounds"]
-        self.max_bound_size = self._get_node_da(0).attrs["maxBoundSize"]
-        self.min_bound_size = self._get_node_da(0).attrs["minBoundSize"]
+        self.bounds, self.min_bound_size, self.max_bound_size = get_bounds(self.points)
         model_dims = self._get_node_da(0).attrs["ndims"]
         # # show z-axis in 3d view
         self.show_zaxis = not np.max(model_dims) <= 2

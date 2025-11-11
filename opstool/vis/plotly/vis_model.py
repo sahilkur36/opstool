@@ -7,7 +7,7 @@ import plotly.graph_objs as go
 from matplotlib.colors import to_hex
 
 from ...post import load_model_data
-from ...utils import CONFIGS, gram_schmidt
+from ...utils import CONFIGS, get_bounds, gram_schmidt
 from .plot_resp_base import PlotResponsePlotlyBase, _make_lines_arrows, _plot_bc, _plot_mp_constraint
 from .plot_utils import (
     PLOT_ARGS,
@@ -36,9 +36,7 @@ class PlotModelBase(PlotResponsePlotlyBase):
             self.points = self.nodal_data.to_numpy()
             self.ndims = self.nodal_data.attrs["ndims"]
             self.show_zaxis = not np.max(self.ndims) <= 2
-            self.bounds = self.nodal_data.attrs["bounds"]
-            self.min_bound_size = self.nodal_data.attrs["minBoundSize"]
-            self.max_bound_size = self.nodal_data.attrs["maxBoundSize"]
+            self.bounds, self.min_bound_size, self.max_bound_size = get_bounds(self.points)
         else:
             raise ValueError("Model have no nodal data!")  # noqa: TRY003
         # -------------------------------------------------------------

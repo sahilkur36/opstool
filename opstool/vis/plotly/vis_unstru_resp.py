@@ -336,30 +336,45 @@ def plot_unstruct_responses(
     resp_dof: str, default: None
         Dof to be visualized, which dependents on the element type `ele_type`.
 
-        .. Note::
+        .. note::
             The `resp_dof` here is consistent with stress-strain (force-deformation),
             and whether it is stress or strain depends on the parameter `resp_type`.
 
-        #. For ``Shell`` elements, If resp_type is the section responses, one of ["FXX", "FYY", "FXY", "MXX", "MYY", "MXY", "VXZ", "VYZ"]. If resp_type is the stress or strain, one of ["sigma11", "sigma22", "sigma12", "sigma23", "sigma13"].
-            If None, defaults to "MXX".
-        #. For ``Plane`` elements, one of ["sigma11", "sigma22", "sigma12", "p1", "p2", "sigma_vm", "tau_max"].
+        .. important::
+            The `resp_dof` parameter depends on the argument `nd_material_type` in :py:class:`opstool.post.CreateODB`.
+            It can only be one of the returned responses.
+
+        #. For ``Shell`` elements
+
+            * If resp_type is the section responses, one of ["FXX", "FYY", "FXY", "MXX", "MYY", "MXY", "VXZ", "VYZ"].
+            * If resp_type is the stress or strain, one of ["sigma11", "sigma22", "sigma12", "sigma23", "sigma13"].
+            * If None, defaults to "MXX".
+
+        #. For ``Plane`` elements, one of ["sigma11", "sigma22", "sigma12", "sigma33", "p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"].
 
             * "sigma11, sigma22, sigma12": Normal stress and shear stress (strain) in the x-y plane.
-            * "p1, p2": Principal stresses (strains).
+            * "sigma33": Out-of-plane normal stress (strain).
+            * "p1, p2, p3": Principal stresses.
             * "sigma_vm": Von Mises stress.
-            * "tau_max": Maximum shear stress (strains).
-            * If None, defaults to "sigma_vm".
+            * "p_mean": Hydrostatic stress.
+            * "q_triaxial": Deviatoric stress in triaxial test: q_tri = p1 - p3.
+            * "q_cs": Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ].
+            * "q_oct": Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2).
+            * "tau_max": Maximum shear stress, 0.5*(p1-p3).
+            * If None, defaults to "sigma11".
 
-        #. For ``Brick`` or ``Solid`` elements, one of ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"]
+        #. For ``Brick`` or ``Solid`` elements, one of ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"]
 
             * "sigma11, sigma22, sigma33": Normal stress (strain) along x, y, z.
             * "sigma12, sigma23, sigma13": Shear stress (strain).
-            * "p1, p2, p3": Principal stresses (strains).
+            * "p1, p2, p3": Principal stresses.
             * "sigma_vm": Von Mises stress.
-            * "tau_max": Maximum shear stress (strains).
-            * "sigma_oct": Octahedral normal stress (strains).
-            * "tau_oct": Octahedral shear stress (strains).
-            * If None, defaults to "sigma_vm".
+            * "p_mean": Hydrostatic stress.
+            * "q_triaxial": Deviatoric stress in triaxial test: q_tri = p1 - p3.
+            * "q_cs": Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ].
+            * "q_oct": Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2).
+            * "tau_max": Maximum shear stress, 0.5*(p1-p3).
+            * If None, defaults to "sigma11".
 
     shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
         The location of the fiber point for shell elements.
@@ -500,30 +515,45 @@ def plot_unstruct_responses_animation(
     resp_dof: str, default: None
         Dof to be visualized, which dependents on the element type `ele_type`.
 
-        .. Note::
+        .. note::
             The `resp_dof` here is consistent with stress-strain (force-deformation),
             and whether it is stress or strain depends on the parameter `resp_type`.
 
-        #. For ``Shell`` elements, If resp_type is the section responses, one of ["FXX", "FYY", "FXY", "MXX", "MYY", "MXY", "VXZ", "VYZ"]. If resp_type is the stress or strain, one of ["sigma11", "sigma22", "sigma12", "sigma23", "sigma13"].
-            If None, defaults to "MXX".
-        #. For ``Plane`` elements, one of ["sigma11", "sigma22", "sigma12", "p1", "p2", "sigma_vm", "tau_max"].
+        .. important::
+            The `resp_dof` parameter depends on the argument `nd_material_type` in :py:class:`opstool.post.CreateODB`.
+            It can only be one of the returned responses.
+
+        #. For ``Shell`` elements
+
+            * If resp_type is the section responses, one of ["FXX", "FYY", "FXY", "MXX", "MYY", "MXY", "VXZ", "VYZ"].
+            * If resp_type is the stress or strain, one of ["sigma11", "sigma22", "sigma12", "sigma23", "sigma13"].
+            * If None, defaults to "MXX".
+
+        #. For ``Plane`` elements, one of ["sigma11", "sigma22", "sigma12", "sigma33", "p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"].
 
             * "sigma11, sigma22, sigma12": Normal stress and shear stress (strain) in the x-y plane.
-            * "p1, p2": Principal stresses (strains).
+            * "sigma33": Out-of-plane normal stress (strain).
+            * "p1, p2, p3": Principal stresses.
             * "sigma_vm": Von Mises stress.
-            * "tau_max": Maximum shear stress (strains).
-            * If None, defaults to "sigma_vm".
+            * "p_mean": Hydrostatic stress.
+            * "q_triaxial": Deviatoric stress in triaxial test: q_tri = p1 - p3.
+            * "q_cs": Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ].
+            * "q_oct": Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2).
+            * "tau_max": Maximum shear stress, 0.5*(p1-p3).
+            * If None, defaults to "sigma11".
 
-        #. For ``Brick`` or ``Solid`` elements, one of ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"]
+        #. For ``Brick`` or ``Solid`` elements, one of ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"]
 
             * "sigma11, sigma22, sigma33": Normal stress (strain) along x, y, z.
             * "sigma12, sigma23, sigma13": Shear stress (strain).
-            * "p1, p2, p3": Principal stresses (strains).
+            * "p1, p2, p3": Principal stresses.
             * "sigma_vm": Von Mises stress.
-            * "tau_max": Maximum shear stress (strains).
-            * "sigma_oct": Octahedral normal stress (strains).
-            * "tau_oct": Octahedral shear stress (strains).
-            * If None, defaults to "sigma_vm".
+            * "p_mean": Hydrostatic stress.
+            * "q_triaxial": Deviatoric stress in triaxial test: q_tri = p1 - p3.
+            * "q_cs": Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ].
+            * "q_oct": Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2).
+            * "tau_max": Maximum shear stress, 0.5*(p1-p3).
+            * If None, defaults to "sigma11".
 
     shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
         The location of the fiber point for shell elements.

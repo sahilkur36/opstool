@@ -32,7 +32,7 @@ def set_odb_format(odb_format: str):
     Parameters:
     ------------
     format: str
-        The output format, options are 'zarr' and 'nc'.
+        The output format, options are ``zarr`` and ``nc``.
     """
     if odb_format.lower() in ["netcdf4", "nc"]:
         CONFIGS.ODB_ENGINE = "netcdf4"

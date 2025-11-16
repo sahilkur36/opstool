@@ -226,22 +226,21 @@ def _check_input_plane(resp_type, resp_dof):
     is_node = "nodes" in resp_type_lower
 
     if resp_dof is None:
-        resp_dof = "sigma_vm"
+        resp_dof = "sigma11"
 
     resp_dof_lower = resp_dof.lower()
-    tensor_dofs = {"sigma11", "sigma22", "sigma12"}
-    measure_dofs = {"p1", "p2", "sigma_vm", "tau_max"}
+    tensor_dofs = {"sigma11", "sigma22", "sigma12", "sigma33"}
+    measure_dofs = {"p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max", "theta"}
 
     if resp_dof_lower in measure_dofs:
-        resp_type = ("StressMeasures" if is_stress else "StrainMeasures") + ("AtNodes" if is_node else "")
+        resp_type = "StressMeasures" + ("AtNodes" if is_node else "")
     elif resp_dof_lower in tensor_dofs:
         resp_type = ("Stresses" if is_stress else "Strains") + ("AtNodes" if is_node else "")
         if not is_stress:
             resp_dof = resp_dof_lower.replace("sigma", "eps")
     else:
         raise ValueError(  # noqa: TRY003
-            f"Not supported component {resp_dof}! "
-            "Valid options are: sigma11, sigma22, sigma12, p1, p2, sigma_vm, tau_max."
+            f"Not supported component {resp_dof}! Valid options are:{', '.join(tensor_dofs)}, {', '.join(measure_dofs)}."
         )
 
     return resp_type, resp_dof
@@ -273,23 +272,21 @@ def _check_input_solid(resp_type, resp_dof):
     is_node = "nodes" in resp_type_lower
 
     if resp_dof is None:
-        resp_dof = "sigma_vm"
+        resp_dof = "sigma11"
 
     resp_dof_lower = resp_dof.lower()
     tensor_dofs = {"sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13"}
-    measure_dofs = {"p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"}
+    measure_dofs = {"p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"}
 
     if resp_dof_lower in measure_dofs:
-        resp_type = ("StressMeasures" if is_stress else "StrainMeasures") + ("AtNodes" if is_node else "")
+        resp_type = "StressMeasures" + ("AtNodes" if is_node else "")
     elif resp_dof_lower in tensor_dofs:
         resp_type = ("Stresses" if is_stress else "Strains") + ("AtNodes" if is_node else "")
         if not is_stress:
             resp_dof = resp_dof_lower.replace("sigma", "eps")
     else:
         raise ValueError(  # noqa: TRY003
-            f"Not supported component {resp_dof}! "
-            "Valid options are: sigma11, sigma22, sigma33, sigma12, sigma23, sigma13, "
-            "p1, p2, p3, sigma_vm, tau_max, sigma_oct, tau_oct."
+            f"Not supported component {resp_dof}! Valid options are: {', '.join(tensor_dofs)}, {', '.join(measure_dofs)}."
         )
 
     return resp_type, resp_dof

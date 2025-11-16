@@ -16,6 +16,7 @@ class BrickRespStepData(ResponseBase):
         compute_measures: bool = True,
         compute_nodal_resp: Optional[str] = None,
         model_update: bool = False,
+        material_type: str = "principal",
         dtype: Optional[dict] = None,
     ):
         self.resp_names = [
@@ -41,20 +42,41 @@ class BrickRespStepData(ResponseBase):
         self.dtype = {"int": np.int32, "float": np.float32}
         if isinstance(dtype, dict):
             self.dtype.update(dtype)
+        self.include_pore_pressure = False
+        self.material_type = material_type
+        if self.material_type.lower() not in ("metal", "soil", "general", "principal", "brittle"):
+            raise ValueError(f"Unknown material_type: {self.material_type}")  # noqa: TRY003
+        if self.material_type.lower() in ("soil", "general"):
+            self.include_pore_pressure = True
 
         self.attrs = {
             "sigma11, sigma22, sigma33": "Normal stress (strain) along x, y, z.",
             "sigma12, sigma23, sigma13": "Shear stress (strain).",
+            "para#i": "The additional output of stress, which is useful for some elements, such as * eta_r * for some u-p elements. "
+            "eta_r--Ratio between the shear (deviatoric) stress and peak shear strength at the current confinement.",
             "p1, p2, p3": "Principal stresses (strains).",
-            "eta_r": "Ratio between the shear (deviatoric) stress and peak shear strength at the current confinement",
             "sigma_vm": "Von Mises stress.",
-            "tau_max": "Maximum shear stress (strains).",
-            "sigma_oct": "Octahedral normal stress (strains).",
-            "tau_oct": "Octahedral shear stress (strains).",
+            "tau_max": "Maximum shear stress.",
+            "p_mean": "Hydrostatic or confining stress.",
+            "q_triaxial": "Deviatoric stress in triaxial test: q_tri = p1 - p3",
+            "q_cs": "Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]",
+            "q_oct": "Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2)",
         }
         self.GaussPointsNo = None
-        self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13", "eta_r"]
-        self.strainDOFs = ["eps11", "eps22", "eps33", "eps12", "eps23", "eps13"]
+        self.stressDOFs = ["sigma11", "sigma22", "sigma33", "sigma12", "sigma23", "sigma13"] + [
+            f"para#{i + 1}" for i in range(100)
+        ]
+        self.strainDOFs = ["eps11", "eps22", "eps33", "eps12", "eps23", "eps13"] + [f"para#{i + 1}" for i in range(100)]
+        if self.material_type.lower() == "principal":
+            self.measureStressDOFs = ["p1", "p2", "p3"]
+        elif self.material_type.lower() == "soil":
+            self.measureStressDOFs = ["p1", "p2", "p3", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"]
+        elif self.material_type.lower() == "metal":
+            self.measureStressDOFs = ["p1", "p2", "p3", "sigma_vm", "tau_max"]
+        elif self.material_type.lower() == "brittle":
+            self.measureStressDOFs = ["p1", "p2", "p3", "tau_max"]
+        else:  # general
+            self.measureStressDOFs = ["p1", "p2", "p3", "sigma_vm", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"]
 
         self.initialize()
 
@@ -63,6 +85,8 @@ class BrickRespStepData(ResponseBase):
         self.resp_steps_list = []
         for name in self.resp_names:
             self.resp_steps_dict[name] = []
+        if self.include_pore_pressure:
+            self.resp_steps_dict["PorePressureAtNodes"] = []
         self.add_data_one_step(self.ele_tags)
         self.times = [0.0]
         self.step_track = 0
@@ -85,6 +109,8 @@ class BrickRespStepData(ResponseBase):
             self.node_tags = node_tags
             if len(node_tags) == 0:
                 self.compute_nodal_resp = False
+            if self.include_pore_pressure:
+                pore_pressure = _get_nodal_pore_pressure(node_tags)
 
         if self.GaussPointsNo is None:
             self.GaussPointsNo = np.arange(stresses.shape[1]) + 1
@@ -105,6 +131,8 @@ class BrickRespStepData(ResponseBase):
                 data_vars["StressAtNodesErr"] = (["nodeTags", "stressDOFs"], node_stress_rel_error)
                 data_vars["StrainsAtNodesErr"] = (["nodeTags", "strainDOFs"], node_strain_rel_error)
                 coords["nodeTags"] = node_tags
+                if self.include_pore_pressure:
+                    data_vars["PorePressureAtNodes"] = (["nodeTags"], pore_pressure)
             ds = xr.Dataset(data_vars=data_vars, coords=coords, attrs=self.attrs)
             self.resp_steps_list.append(ds)
         else:
@@ -115,6 +143,8 @@ class BrickRespStepData(ResponseBase):
                 self.resp_steps_dict["StrainsAtNodes"].append(node_strain_avg)
                 self.resp_steps_dict["StressAtNodesErr"].append(node_stress_rel_error)
                 self.resp_steps_dict["StrainsAtNodesErr"].append(node_strain_rel_error)
+                if self.include_pore_pressure:
+                    self.resp_steps_dict["PorePressureAtNodes"].append(pore_pressure)
 
         self.times.append(ops.getTime())
         self.step_track += 1
@@ -152,6 +182,11 @@ class BrickRespStepData(ResponseBase):
                     ["time", "nodeTags", "strainDOFs"],
                     self.resp_steps_dict["StrainsAtNodesErr"],
                 )
+                if self.include_pore_pressure:
+                    data_vars["PorePressureAtNodes"] = (
+                        ["time", "nodeTags"],
+                        self.resp_steps_dict["PorePressureAtNodes"],
+                    )
                 coords["nodeTags"] = self.node_tags
             self.resp_steps = xr.Dataset(data_vars=data_vars, coords=coords, attrs=self.attrs)
 
@@ -160,18 +195,18 @@ class BrickRespStepData(ResponseBase):
 
     def _compute_measures_(self):
         stresses = self.resp_steps["Stresses"]
-        strains = self.resp_steps["Strains"]
 
         if stresses.shape[-1] >= 6:
-            stress_measures = _calculate_stresses_measures_4D(stresses.data, dtype=self.dtype)
-            strain_measures = _calculate_stresses_measures_4D(strains.data, dtype=self.dtype)
+            stress_measures = _calculate_stresses_measures_4D(
+                stresses.data, dtype=self.dtype, material_type=self.material_type
+            )
 
             dims = ["time", "eleTags", "GaussPoints", "measures"]
             coords = {
                 "time": stresses.coords["time"],
                 "eleTags": stresses.coords["eleTags"],
                 "GaussPoints": stresses.coords["GaussPoints"],
-                "measures": ["p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"],
+                "measures": self.measureStressDOFs,
             }
 
             self.resp_steps["StressMeasures"] = xr.DataArray(
@@ -180,30 +215,18 @@ class BrickRespStepData(ResponseBase):
                 coords=coords,
                 name="StressMeasures",
             )
-            self.resp_steps["StrainMeasures"] = xr.DataArray(
-                strain_measures,
-                dims=dims,
-                coords=coords,
-                name="StrainMeasures",
-            )
             if self.compute_nodal_resp:
                 node_stress_measures = _calculate_stresses_measures_4D(
-                    self.resp_steps["StressesAtNodes"].data, dtype=self.dtype
-                )
-                node_strain_measures = _calculate_stresses_measures_4D(
-                    self.resp_steps["StrainsAtNodes"].data, dtype=self.dtype
+                    self.resp_steps["StressesAtNodes"].data, dtype=self.dtype, material_type=self.material_type
                 )
                 dims = ["time", "nodeTags", "measures"]
                 coords = {
                     "time": stresses.coords["time"],
                     "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
-                    "measures": ["p1", "p2", "p3", "sigma_vm", "tau_max", "sigma_oct", "tau_oct"],
+                    "measures": self.measureStressDOFs,
                 }
                 self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
                     node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
-                )
-                self.resp_steps["StrainMeasuresAtNodes"] = xr.DataArray(
-                    node_strain_measures, dims=dims, coords=coords, name="StrainMeasuresAtNodes"
                 )
 
     def get_data(self):
@@ -348,30 +371,67 @@ def _get_gp_resp_by_one(etag, i):
     return stress_, strain_
 
 
-def _calculate_stresses_measures_4D(stress_array, dtype):
+def _calculate_stresses_measures_4D(stress_array, dtype, material_type="general"):
     """
     Calculate various stresses from the stress values at Gaussian points.
 
     Parameters:
     stress_array (numpy.ndarray): A 4D array with shape (num_elements, num_gauss_points, num_stresses).
-
-    Returns:
-    dict: A dictionary containing the calculated stresses for each element.
     """
-    # Extract individual stress components
-    sig11 = stress_array[..., 0]  # Normal stress in x-direction
-    sig22 = stress_array[..., 1]  # Normal stress in y-direction
-    sig33 = stress_array[..., 2]  # Normal stress in z-direction
-    sig12 = stress_array[..., 3]  # Shear stress in xy-plane
-    sig23 = stress_array[..., 4]  # Shear stress in yz-plane
-    sig13 = stress_array[..., 5]  # Shear stress in xz-plane
+    if material_type.lower() == "principal":
+        p1, p2, p3 = _principal_stresses(stress_array)
+        data = np.stack([p1, p2, p3], axis=-1)
+    elif material_type.lower() == "soil":
+        p1, p2, p3 = _principal_stresses(stress_array)
+        p_mean, q_tri, q_cs, q_oct = _p_q_stress(p1, p2, p3)
+        tau_max = _max_shear_stress(p1, p3)
+        data = np.stack(
+            [p1, p2, p3, p_mean, q_tri, q_cs, q_oct, tau_max],
+            axis=-1,
+        )
+    elif material_type.lower() == "metal":
+        p1, p2, p3 = _principal_stresses(stress_array)
+        sigma_vm = _von_mises_stress(stress_array)
+        tau_max = _max_shear_stress(p1, p3)
+        data = np.stack(
+            [p1, p2, p3, sigma_vm, tau_max],
+            axis=-1,
+        )
+    elif material_type.lower() == "brittle":
+        p1, p2, p3 = _principal_stresses(stress_array)
+        tau_max = _max_shear_stress(p1, p3)
+        data = np.stack(
+            [p1, p2, p3, tau_max],
+            axis=-1,
+        )
+    else:  # general
+        p1, p2, p3 = _principal_stresses(stress_array)
+        sigma_vm = _von_mises_stress(stress_array)
+        p_mean, q_tri, q_cs, q_oct = _p_q_stress(p1, p2, p3)
+        tau_max = _max_shear_stress(p1, p3)
+        data = np.stack(
+            [p1, p2, p3, sigma_vm, p_mean, q_tri, q_cs, q_oct, tau_max],
+            axis=-1,
+        )
 
-    # Calculate von Mises stress for each Gauss point
-    sig_vm = np.sqrt(
-        0.5 * ((sig11 - sig22) ** 2 + (sig22 - sig33) ** 2 + (sig33 - sig11) ** 2)
-        + 3 * (sig12**2 + sig13**2 + sig23**2)
-    )
+    return data.astype(dtype["float"])
 
+
+def _principal_stresses(stress_array):
+    """
+    Compute principal stresses and a representative in-plane angle.
+
+    Parameters
+    ----------
+    stress_array : ndarray
+        (..., 6) = [s11,s22,s33,s12,s23,s13].
+
+    Returns
+    -------
+    p1, p2, p3, theta_deg : ndarrays
+        p1 ≥ p2 ≥ p3, theta_deg = angle (deg) of major principal direction
+        projected to x-y plane: atan2(vy, vx).
+    """
     # Calculate principal stresses
     # Using the stress tensor to calculate eigenvalues
     stress_tensor = _assemble_stress_tensor_4D(stress_array)
@@ -381,41 +441,43 @@ def _calculate_stresses_measures_4D(stress_array, dtype):
     p2 = principal_stresses[..., 1]  # Intermediate principal stress
     p3 = principal_stresses[..., 0]  # Minimum principal stress
 
-    # Calculate maximum shear stress
-    tau_max = np.abs(p1 - p3) / 2
-
-    # Calculate octahedral normal stress
-    sig_oct = (p1 + p2 + p3) / 3
-
-    # Calculate octahedral shear stress
-    tau_oct = 1 / 3 * np.sqrt((p1 - p2) ** 2 + (p2 - p3) ** 2 + (p3 - p1) ** 2)
-
-    data = np.stack([p1, p2, p3, sig_vm, tau_max, sig_oct, tau_oct], axis=-1)
-
-    return data.astype(dtype["float"])
+    return p1, p2, p3
 
 
-def _assemble_stress_tensor_3D(stress_array):
-    """
-    Assemble a 3D stress array into a 4D stress tensor array.
-    """
-    num_elements, num_gauss_points, _ = stress_array.shape
-    stress_tensor = np.full((num_elements, num_gauss_points, 3, 3), np.nan)
-    for i in range(num_elements):
-        for j in range(num_gauss_points):
-            sig11 = stress_array[i, j, 0]  # Normal stress in x-direction
-            sig22 = stress_array[i, j, 1]  # Normal stress in y-direction
-            sig33 = stress_array[i, j, 2]  # Normal stress in z-direction
-            tau12 = stress_array[i, j, 3]  # Shear stress in xy-plane
-            tau23 = stress_array[i, j, 4]  # Shear stress in yz-plane
-            tau13 = stress_array[i, j, 5]  # Shear stress in xz-plane
-            st = np.array([
-                [sig11, tau12, tau13],
-                [tau12, sig22, tau23],
-                [tau13, tau23, sig33],
-            ])
-            stress_tensor[i, j, ...] = st
-    return np.nan_to_num(stress_tensor, nan=0.0)
+def _von_mises_stress(stress_array):
+    sig11 = stress_array[..., 0]
+    sig22 = stress_array[..., 1]
+    sig33 = stress_array[..., 2]
+    sig12 = stress_array[..., 3]
+    sig23 = stress_array[..., 4]
+    sig13 = stress_array[..., 5]
+
+    # von Mises equivalent stress
+    sigma_vm = np.sqrt(
+        0.5 * ((sig11 - sig22) ** 2 + (sig22 - sig33) ** 2 + (sig33 - sig11) ** 2)
+        + 3.0 * (sig12**2 + sig23**2 + sig13**2)
+    )
+    return sigma_vm
+
+
+def _p_q_stress(p1, p2, p3):
+    # mean (octahedral normal) stress
+    p_mean = (p1 + p2 + p3) / 3.0
+    # triaxial-style deviatoric stress: q = p1 − p3
+    q_tri = p1 - p3
+    # second deviatoric invariant J2 from principal stresses
+    S = (p1 - p2) ** 2 + (p2 - p3) ** 2 + (p3 - p1) ** 2
+    J2 = S / 6.0
+    # critical-state style q: q_cs = √(3 J2)
+    q_cs = np.sqrt(3.0 * J2)  # = sqrt(0.5 * S)
+    # octahedral shear stress (magnitude)
+    q_oct = (1.0 / 3.0) * np.sqrt(S)
+    return p_mean, q_tri, q_cs, q_oct
+
+
+def _max_shear_stress(p1, p3):
+    tau_max = 0.5 * (p1 - p3)
+    return tau_max
 
 
 def _assemble_stress_tensor_4D(stress_array):
@@ -475,3 +537,12 @@ def _assemble_stress_tensor_4D(stress_array):
         raise ValueError(f"Invalid stress_array shape: {stress_array.shape}. Expected 3D or 4D array.")  # noqa: TRY003
 
     return np.nan_to_num(stress_tensor, nan=0.0)
+
+
+def _get_nodal_pore_pressure(node_tags):
+    pressure = []
+    for ntag in node_tags:
+        vel = ops.nodeVel(ntag)
+        p = vel[3] if len(vel) == 4 else 0.0
+        pressure.append(p)
+    return np.array(pressure)

@@ -59,9 +59,8 @@ class _POST_ARGS_TYPES(TypedDict, total=False):
 
 _POST_ARGS = SimpleNamespace(
     elastic_frame_sec_points=7,
-    compute_mechanical_measures=True,
+    compute_mechanical_measures="All",
     project_gauss_to_nodes="copy",
-    nd_material_type="principal",
     dtype={"int": np.int32, "float": np.float32},
     # ------------------------------
     save_nodal_resp=True,
@@ -112,9 +111,48 @@ class CreateODB:
         * elastic_frame_sec_points: int, default: 7
             The number of elastic frame elements section points.
             A larger number may result in a larger file size.
-        * compute_mechanical_measures: bool, default: True
+        * compute_mechanical_measures: Union[bool, str, dict], default: "All"
             Whether to compute mechanical measures for ``solid and planar elements``,
             including principal stresses, principal strains, von Mises stresses, etc.
+            If False, no mechanical measures will be computed.
+            If True or "All", all mechanical measures will be computed.
+
+            Otherwise, you can specify a dictionary to indicate which measures to compute.
+            Dictionary keys are the names of mechanical measures, and values are parameters needed for computation.
+            Only the measures specified in the dictionary will be computed.
+            For example, the default setting is:
+
+            ..  code-block:: python
+
+                {
+                    "principal": None,  # principal stresses
+                    "von-mises": None,  # von Mises stress
+                    "octahedral": None,  # octahedral stresses (sigma_oct, tau_oct)
+                    "tau_max": None,  # maximum shear stress (Tresca)
+                }
+
+            where the keys are the names of mechanical measures to be computed, and the values are None because no additional parameters are needed for these measures.
+            If you want to compute the Mohr-Coulomb or Drucker-Prager equivalent stress with specific parameters, you can set:
+
+            ..  code-block:: python
+
+                {
+                    "principal": None,  # principal stresses
+                    "von-mises": None,  # von Mises stress
+                    "octahedral": None,  # octahedral stresses (sigma_oct, tau_oct)
+                    "tau_max": None,  # maximum shear stress (Tresca)
+                    # Mohr-Coulomb  with Tension-Compression Form
+                    "mohr_coulomb_sy": {"syc": <compressive strength>, "syt": <tensile strength>},
+                    # Mohr-Coulomb with Cohesion-Friction Form
+                    "mohr_coulomb_c_phi": {"c": <cohesion>, "phi": <friction angle in degrees>},
+                    # Drucker-Prager with Tension-Compression Form
+                    "drucker_prager_sy": {"syc": <compressive strength>, "syt": <tensile strength>},
+                    # Drucker-Prager with Cohesion-Friction Form
+                    "drucker_prager_c_phi": {"c": <cohesion>, "phi": <friction angle in degrees>, "kind": <circumscribed/middle/inscribed>},
+                }
+
+            For detailed information, see :ref:`theory_stress_criteria`.
+
         * project_gauss_to_nodes: Optional[str], default: "copy"
             Method to project Gauss point responses to nodes. Options are:
 
@@ -122,19 +160,6 @@ class CreateODB:
             * ``"average"``: Average Gauss point responses to nodes by integrate weight.
             * ``"extrapolate"``: Extrapolate Gauss point responses to nodes by element shape function.
             * ``None`` or ``False``: Do not project Gauss point responses to nodes.
-        * nd_material_type: Optional[str], default: "general"
-            Type of NDMaterial used in ``solid`` and ``planar`` elements. Options are:
-
-            * ``"general"``: General material type, including all data available.
-            * ``"metal"``: Metal material type, suitable for metal materials. It includes yield ["p1", "p2", "p3", "sigma_vm", "tau_max"].
-            * ``"brittle"``: Brittle material type, suitable for brittle materials like concrete. It includes yield ["p1", "p2", "p3", "tau_max"].
-            * ``"soil"``: Soil material type, suitable for soil materials. It includes ["p1", "p2", "p3", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max"].
-            * ``"principal"``: Only compute principal stresses and directions. It includes ["p1", "p2", "p3"].
-
-            .. Note::
-                This parameter affects the calculation of stress measures.
-                It will return the appropriate stress measures based on the selected material type.
-                This feature is added since version 1.1.0.
 
         * dtype: dict, default: dict(int=np.int32, float=np.float32)
             Set integer and floating point precision types.
@@ -353,7 +378,6 @@ class CreateODB:
     def _set_plane_resp(self):
         _save_plane_resp = _POST_ARGS.save_plane_resp
         _plane_tags = _POST_ARGS.plane_tags
-        _nd_material_type = _POST_ARGS.nd_material_type
         plane_tags = _plane_tags if _plane_tags is not None else self._ModelInfo.get_current_plane_tags()
         if plane_tags is not None:
             plane_tags = [int(tag) for tag in np.atleast_1d(plane_tags)]
@@ -364,7 +388,6 @@ class CreateODB:
                     plane_tags,
                     compute_measures=_POST_ARGS.compute_mechanical_measures,
                     compute_nodal_resp=_POST_ARGS.project_gauss_to_nodes,
-                    material_type=_nd_material_type,
                     model_update=self._model_update,
                     dtype=_POST_ARGS.dtype,
                 )
@@ -374,7 +397,6 @@ class CreateODB:
     def _set_brick_resp(self):
         _save_brick_resp = _POST_ARGS.save_brick_resp
         _brick_tags = _POST_ARGS.brick_tags
-        _nd_material_type = _POST_ARGS.nd_material_type
         brick_tags = _brick_tags if _brick_tags is not None else self._ModelInfo.get_current_brick_tags()
         if brick_tags is not None:
             brick_tags = [int(tag) for tag in np.atleast_1d(brick_tags)]
@@ -385,7 +407,6 @@ class CreateODB:
                     compute_measures=_POST_ARGS.compute_mechanical_measures,
                     compute_nodal_resp=_POST_ARGS.project_gauss_to_nodes,
                     model_update=self._model_update,
-                    material_type=_nd_material_type,
                     dtype=_POST_ARGS.dtype,
                 )
             else:

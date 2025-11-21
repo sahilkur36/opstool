@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import openseespy.opensees as ops
@@ -13,9 +13,8 @@ class PlaneRespStepData(ResponseBase):
     def __init__(
         self,
         ele_tags=None,
-        compute_measures: bool = True,
+        compute_measures: Union[bool, dict, str] = True,
         compute_nodal_resp: Optional[str] = None,
-        material_type: str = "principal",
         model_update: bool = False,
         dtype: Optional[dict] = None,
     ):
@@ -40,12 +39,15 @@ class PlaneRespStepData(ResponseBase):
         self.nodal_resp_method = compute_nodal_resp
         self.model_update = model_update
         self.dtype = {"int": np.int32, "float": np.float32}
-        self.include_pore_pressure = False
-        self.material_type = material_type
-        if self.material_type.lower() not in ("metal", "soil", "general", "principal", "brittle"):
-            raise ValueError(f"Unknown material_type: {self.material_type}")  # noqa: TRY003
-        if self.material_type.lower() in ("soil", "general"):
-            self.include_pore_pressure = True
+        self.include_pore_pressure = True
+
+        if compute_measures in [True, "All", "all", "ALL"]:
+            self.measures = {"principal": [], "von_mises": [], "octahedral": [], "tau_max": []}
+        elif isinstance(compute_measures, dict):
+            self.measures = compute_measures
+        else:
+            self.measures = {}
+
         if isinstance(dtype, dict):
             self.dtype.update(dtype)
 
@@ -55,38 +57,23 @@ class PlaneRespStepData(ResponseBase):
             "para#i": "The additional output of stress, which is useful for some elements, such as * eta_r * for some u-p elements. "
             "eta_r--Ratio between the shear (deviatoric) stress and peak shear strength at the current confinement.",
             "p1, p2, p3": "Principal stresses, p3=0 for 2D plane stress condition, p3!=0 for 3D plane strain condition.",
-            "sigma_vm": "Von Mises stress, 0.5*(p1-p3).",
-            "tau_max": "Maximum shear stress.",
-            "p_mean": "Hydrostatic or confining stress.",
-            "q_triaxial": "Deviatoric stress in triaxial test: q_tri = p1 - p3",
-            "q_cs": "Deviatoric stress in critical state soil mechanics, q_cs = √(3J₂), where J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]",
-            "q_oct": "Deviatoric stress in octahedral shear stress, τ_oct = √(2/3) * √(J2)",
             "theta": "Angle (degrees) between x-axis and principal axis 1.",
+            "sigma_vm": "Von Mises stress.",
+            "tau_max": "Maximum shear stress, 0.5*(p1-p3).",
+            "sigma_oct": "Octahedral normal stress, (p1+p2+p3)/3.",
+            "tau_oct": "Octahedral shear stress, sqrt(2/3*J2).",
+            "sigma_mohr_coulomb_sy_eq": "Mohr-Coulomb equivalent stress (using tensile and compressive strengths).",
+            "sigma_mohr_coulomb_sy_intensity": "Mohr-Coulomb intensity (using tensile and compressive strengths).",
+            "sigma_mohr_coulomb_c_phi_eq": "Mohr-Coulomb equivalent stress (using cohesion and friction angle).",
+            "sigma_mohr_coulomb_c_phi_intensity": "Mohr-Coulomb intensity (using cohesion and friction angle).",
+            "sigma_drucker_prager_sy_eq": "Drucker-Prager equivalent stress (using tensile and compressive strengths).",
+            "sigma_drucker_prager_sy_intensity": "Drucker-Prager intensity (using tensile and compressive strengths).",
+            "sigma_drucker_prager_c_phi_eq": "Drucker-Prager equivalent stress (using cohesion and friction angle).",
+            "sigma_drucker_prager_c_phi_intensity": "Drucker-Prager intensity (using cohesion and friction angle).",
         }
         self.GaussPointsNo = None
         self.stressDOFs = ["sigma11", "sigma22", "sigma12", "sigma33"] + ["para#" + str(i + 1) for i in range(100)]
         self.strainDOFs = ["eps11", "eps22", "eps12"] + ["para#" + str(i + 1) for i in range(100)]
-        if self.material_type.lower() == "principal":
-            self.measureDOFs = ["p1", "p2", "p3", "theta"]
-        elif self.material_type.lower() == "soil":
-            self.measureDOFs = ["p1", "p2", "p3", "p_mean", "q_triaxial", "q_cs", "q_oct", "tau_max", "theta"]
-        elif self.material_type.lower() == "metal":
-            self.measureDOFs = ["p1", "p2", "p3", "sigma_vm", "tau_max", "theta"]
-        elif self.material_type.lower() == "brittle":
-            self.measureDOFs = ["p1", "p2", "p3", "tau_max", "theta"]
-        else:  # general
-            self.measureDOFs = [
-                "p1",
-                "p2",
-                "p3",
-                "sigma_vm",
-                "p_mean",
-                "q_triaxial",
-                "q_cs",
-                "q_oct",
-                "tau_max",
-                "theta",
-            ]
         self.initialize()
 
     def initialize(self):
@@ -202,6 +189,9 @@ class PlaneRespStepData(ResponseBase):
                 coords["nodeTags"] = self.node_tags
             self.resp_steps = xr.Dataset(data_vars=data_vars, coords=coords, attrs=self.attrs)
 
+        if np.abs(self.resp_steps["PorePressureAtNodes"].data).sum() < 1e-10:
+            self.resp_steps = self.resp_steps.drop_vars("PorePressureAtNodes")
+
         if self.compute_measures:
             self._compute_measures_()
 
@@ -209,8 +199,8 @@ class PlaneRespStepData(ResponseBase):
         stresses = self.resp_steps["Stresses"]
 
         if stresses.shape[-1] >= 3:
-            stress_measures = _calculate_stresses_measures(
-                stresses.data, dtype=self.dtype, material_type=self.material_type
+            stress_measures, measureDOFs = _calculate_stresses_measures(
+                stresses.data, dtype=self.dtype, measures=self.measures
             )
 
             dims = ["time", "eleTags", "GaussPoints", "measures"]
@@ -218,7 +208,7 @@ class PlaneRespStepData(ResponseBase):
                 "time": stresses.coords["time"],
                 "eleTags": stresses.coords["eleTags"],
                 "GaussPoints": stresses.coords["GaussPoints"],
-                "measures": self.measureDOFs,
+                "measures": measureDOFs,
             }
 
             self.resp_steps["StressMeasures"] = xr.DataArray(
@@ -230,17 +220,14 @@ class PlaneRespStepData(ResponseBase):
 
             if self.compute_nodal_resp:
                 # pore_pressure = self.resp_steps["PorePressureAtNodes"].data if self.include_pore_pressure else None
-                node_stress_measures = _calculate_stresses_measures(
-                    self.resp_steps["StressesAtNodes"].data,
-                    dtype=self.dtype,
-                    material_type=self.material_type,
-                    pore_pressure=None,
+                node_stress_measures, measureDOFs = _calculate_stresses_measures(
+                    self.resp_steps["StressesAtNodes"].data, dtype=self.dtype, measures=self.measures
                 )
                 dims = ["time", "nodeTags", "measures"]
                 coords = {
                     "time": stresses.coords["time"],
                     "nodeTags": self.resp_steps["StressesAtNodes"].coords["nodeTags"],
-                    "measures": self.measureDOFs,
+                    "measures": measureDOFs,
                 }
                 self.resp_steps["StressMeasuresAtNodes"] = xr.DataArray(
                     node_stress_measures, dims=dims, coords=coords, name="StressMeasuresAtNodes"
@@ -416,7 +403,7 @@ def _reshape_stress(stress):
     if stress.ndim == 1:
         stress = np.reshape(stress, (-1, 1))
     num_stress = stress.shape[1]
-    if num_stress in [5, 4]:
+    if num_stress >= 4:
         # sigma_xx, sigma_yy, sigma_zz, sigma_xy, ηr, where ηr is the ratio between the shear (deviatoric) stress and peak
         # shear strength at the current confinement (0<=ηr<=1.0).
         # # sigma_xx, sigma_yy, sigma_zz, sigma_xy if num_stress ==4
@@ -424,246 +411,170 @@ def _reshape_stress(stress):
     return stress
 
 
-def _calculate_stresses_measures(stress_array, dtype, material_type="metal", pore_pressure=None):
-    """
-    Wrapper function to compute stress measures at Gauss points.
-
-    Parameters
-    ----------
-    stress_array : ndarray
-        Array [..., 3] containing [sig11, sig22, sig12].
-    dtype : dict
-        Dictionary with the desired float type, e.g. {"float": np.float64}.
-    material_type : {"metal", "soil", "general", "principal"}
-        - "metal"     : von Mises equivalent stress (ductile metals)
-        - "soil"      : mean stress p and deviatoric stress q (frictional materials)
-        - "general"   : both von Mises and p–q type measures
-        - "principal" : only principal stresses and maximum shear
-    pore_pressure : ndarray or None , optional
-        Pore pressure field for effective-stress calculations in soils.
-
-    Returns
-    -------
-    ndarray
-        Depending on material_type:
-        - "metal"     : [..., 5] = [p1_2d, p2_2d, sig_vm, tau_max, theta]
-        - "soil"      : [..., 8] = [p1_2d, p2_2d, p_mean, q_triaxial, q_cs, q_oct, tau_max, theta]
-        - "general"   : [..., 9] = [p1_2d, p2_2d, sig_vm, p_mean, q_triaxial, q_cs, q_oct, tau_max, theta]
-        - "principal" : [..., 4] = [p1_2d, p2_2d, tau_max, theta]
-    """
-    # in-plane components
+def _calculate_stresses_measures(stress_array, dtype, measures):
+    # unpack stress components (plane stress default)
     sig11 = stress_array[..., 0]
     sig22 = stress_array[..., 1]
     sig12 = stress_array[..., 2]
-    # out-of-plane stress: plane stress by default
     sig33 = stress_array[..., 3] if stress_array.shape[-1] >= 4 else np.zeros_like(sig11)
 
-    # effective vs total stress
-    sig11_eff, sig22_eff, sig33_eff, sig12_eff = _compute_effective_stress(
-        sig11, sig22, sig33, sig12, material_type, pore_pressure
-    )
+    # principal stresses
+    p1, p2, p3, theta = _compute_principal(sig11, sig22, sig12, sig33)
 
-    # 2D principal stresses and rotation
-    p1_2d, p2_2d, theta_deg = _compute_principal_2d(sig11_eff, sig22_eff, sig12_eff)
+    # output containers
+    data = []
+    dofs = []
 
-    # 3D principal stresses and maximum shear
-    p1_3d, p2_3d, p3_3d, tau_max = _compute_principal_3d_and_tau(p1_2d, p2_2d, sig33_eff)
+    # definition of measure handlers
+    handlers = {
+        "principal": lambda: ([p1, p2, p3, theta], ["p1", "p2", "p3", "theta"]),
+        "von_mises": lambda: ([_von_mises(sig11, sig22, sig33, sig12)], ["sigma_vm"]),
+        "tau_max": lambda: ([_tau_max(p1, p3)], ["tau_max"]),
+        "octahedral": lambda: (
+            list(_octahedral_stress(p1, p2, p3)),
+            ["sigma_oct", "tau_oct"],
+        ),
+        "mohr_coulomb_sy": lambda params: (
+            list(_sig_mohr_coulomb_sy(p1, p2, p3, **params)),
+            ["sigma_mohr_coulomb_sy_eq", "sigma_mohr_coulomb_sy_intensity"],
+        ),
+        "mohr_coulomb_c_phi": lambda params: (
+            list(_sig_mohr_coulomb_c_phi(p1, p2, p3, **params)),
+            ["sigma_mohr_coulomb_c_phi_eq", "sigma_mohr_coulomb_c_phi_intensity"],
+        ),
+        "drucker_prager_sy": lambda params: (
+            list(_sig_drucker_prager_sy(p1, p2, p3, **params)),
+            ["sigma_drucker_prager_sy_eq", "sigma_drucker_prager_sy_intensity"],
+        ),
+        "drucker_prager_c_phi": lambda params: (
+            list(_sig_drucker_prager_c_phi(p1, p2, p3, **params)),
+            ["sigma_drucker_prager_c_phi_eq", "sigma_drucker_prager_c_phi_intensity"],
+        ),
+    }
 
-    # dispatch by material type
-    if material_type == "metal":
-        data = _stress_measures_metal(
-            sig11_eff, sig22_eff, sig33_eff, sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg
-        )
-    elif material_type == "soil":
-        data = _stress_measures_soil(sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg)
-    elif material_type == "general":
-        data = _stress_measures_general(
-            sig11_eff, sig22_eff, sig33_eff, sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg
-        )
-    elif material_type == "brittle":
-        # extra example: for concrete / rock where principal stresses are key
-        data = _stress_measures_brittle_only(p1_3d, p2_3d, p3_3d, tau_max, theta_deg)
-    elif material_type == "principal":
-        data = _stress_measures_principal_only(p1_3d, p2_3d, p3_3d, theta_deg)
-    else:
-        raise ValueError(f"Unknown material_type: {material_type}")  # noqa: TRY003
+    # iterate user-requested measures
+    for measure, params in measures.items():
+        mkey = measure.lower()
 
-    return data.astype(dtype["float"])
+        if mkey not in handlers:
+            raise ValueError(f"Measure '{measure}' not recognized.")  # noqa: TRY003
 
+        handler = handlers[mkey]
 
-def _compute_effective_stress(sig11, sig22, sig33, sig12, material_type, pore_pressure):
-    """
-    Return effective or total stresses depending on the material type.
+        # check if handler requires parameters
+        if isinstance(params, dict) and len(params) > 0:
+            vals, names = handler(params)
+        else:
+            vals, names = handler()
 
-    For soils (or 'general' with pore pressure given), effective stress is:
-        sigma' = sigma - u
-    For metals and others, pore pressure is ignored.
-    """
-    if material_type in ("soil", "general") and pore_pressure is not None:
-        # effective stresses for porous media
-        sig11_eff = sig11 - pore_pressure
-        sig22_eff = sig22 - pore_pressure
-        sig33_eff = sig33 - pore_pressure
-        sig12_eff = sig12  # shear is not affected by pore pressure
-    else:
-        # total stresses for metals / generic cases
-        sig11_eff = sig11
-        sig22_eff = sig22
-        sig33_eff = sig33
-        sig12_eff = sig12
+        data.extend(vals)
+        dofs.extend(names)
 
-    return sig11_eff, sig22_eff, sig33_eff, sig12_eff
+    stress_measures = np.stack(data, axis=-1).astype(dtype["float"])
+    return stress_measures, dofs
 
 
-def _compute_principal_2d(sig11, sig22, sig12):
-    """
-    Compute in-plane (2D) principal stresses and rotation angle.
-
-    Returns
-    -------
-    p1_2d, p2_2d, theta_deg
-        p1_2d, p2_2d: in-plane principal stresses
-        theta_deg: angle (deg) between x-axis and principal axis 1
-    """
+def _compute_principal(sig11, sig22, sig12, sig33):
     sig_avg = (sig11 + sig22) / 2.0
     radius = np.sqrt(((sig11 - sig22) / 2.0) ** 2 + sig12**2)
-
     p1_2d = sig_avg + radius
     p2_2d = sig_avg - radius
-
     # principal direction
     theta = np.zeros_like(sig11)
     mask = np.abs(sig11 - sig22) > 1e-10
     theta[mask] = 0.5 * np.arctan2(2.0 * sig12[mask], sig11[mask] - sig22[mask])
-
     # special case: sig11 ≈ sig22 but non-zero shear
     mask_equal = (~mask) & (np.abs(sig12) > 1e-10)
     theta[mask_equal] = 0.25 * np.pi * np.sign(sig12[mask_equal])
-
     theta_deg = np.degrees(theta)
-    return p1_2d, p2_2d, theta_deg
-
-
-def _compute_principal_3d_and_tau(p1_2d, p2_2d, sig33):
-    """
-    Build a 3D principal stress set from two in-plane principal stresses
-    and the out-of-plane normal stress.
-
-    Returns
-    -------
-    p1_3d, p2_3d, p3_3d, tau_max
-        p1_3d >= p2_3d >= p3_3d
-        tau_max: maximum shear stress = (p1_3d - p3_3d) / 2
-    """
+    # 3D principal stresses
     p_array = np.stack([p1_2d, p2_2d, sig33], axis=-1)
     # sort along the last axis: [..., 0] = min, [..., 2] = max
     p_sorted = np.sort(p_array, axis=-1)
     p3_3d = p_sorted[..., 0]
     p2_3d = p_sorted[..., 1]
     p1_3d = p_sorted[..., 2]
-
-    tau_max = (p1_3d - p3_3d) / 2.0
-    return p1_3d, p2_3d, p3_3d, tau_max
+    return p1_3d, p2_3d, p3_3d, theta_deg
 
 
-def _stress_measures_metal(sig11_eff, sig22_eff, sig33_eff, sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg):
-    """
-    Stress measures for ductile isotropic metals.
-
-    Returns array [..., 5] = [p1_2d, p2_2d, sig_vm, tau_max, theta_deg]
-    """
-    sig_vm = np.sqrt(
-        ((sig11_eff - sig22_eff) ** 2 + (sig22_eff - sig33_eff) ** 2 + (sig33_eff - sig11_eff) ** 2) / 2.0
-        + 3.0 * sig12_eff**2
-    )
-    return np.stack([p1_3d, p2_3d, p3_3d, sig_vm, tau_max, theta_deg], axis=-1)
+def _tau_max(p1, p3):
+    return 0.5 * (p1 - p3)
 
 
-def _stress_measures_soil(sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg):
-    """
-    Stress measures for frictional materials like soils.
-
-    Uses mean effective stress p and "triaxial" deviatoric stress q = σ1 - σ3.
-
-    Returns array [..., 6] = [p1_2d, p2_2d, p_mean, q_dev, tau_max, theta_deg]
-    """
-    # mean effective stress (first invariant)
-    # use principal stresses to be consistent
-    # mean effective stress (first invariant)
-    # use principal stresses to be consistent
-    p_mean = (p1_3d + p2_3d + p3_3d) / 3.0
-
-    # 1) Triaxial-style deviatoric stress: q = p1 - p3
-    q_triaxial = p1_3d - p3_3d
-
-    # 2) J2 and critical-state q: q_cs = √(3 J2)
-    #   J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]
-    S = (p1_3d - p2_3d) ** 2 + (p2_3d - p3_3d) ** 2 + (p3_3d - p1_3d) ** 2
-    J2 = S / 6.0
-    q_cs = np.sqrt(3.0 * J2)
-
-    # 3) Octahedral shear stress (magnitude): τ_oct = √(2/3) * √(J2)
-    #   Equivalently: τ_oct = (1/3) * √[ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]
-    q_oct = (1.0 / 3.0) * np.sqrt(S)
-
-    return np.stack(
-        [p1_3d, p2_3d, p3_3d, p_mean, q_triaxial, q_cs, q_oct, tau_max, theta_deg],
-        axis=-1,
-    )
+def _von_mises(sig11, sig22, sig33, sig12):
+    sig_vm = np.sqrt(((sig11 - sig22) ** 2 + (sig22 - sig33) ** 2 + (sig33 - sig11) ** 2) / 2.0 + 3.0 * sig12**2)
+    return sig_vm
 
 
-def _stress_measures_general(sig11_eff, sig22_eff, sig33_eff, sig12_eff, p1_3d, p2_3d, p3_3d, tau_max, theta_deg):
-    """
-    Combined stress measures, useful when you want both
-    metal-type and soil-type invariants.
-
-    Returns array [..., 7] = [p1_2d, p2_2d, sig_vm, p_mean, q_dev, tau_max, theta_deg]
-    """
-    sig_vm = np.sqrt(
-        ((sig11_eff - sig22_eff) ** 2 + (sig22_eff - sig33_eff) ** 2 + (sig33_eff - sig11_eff) ** 2) / 2.0
-        + 3.0 * sig12_eff**2
-    )
-    # mean effective stress (first invariant)
-    # use principal stresses to be consistent
-    p_mean = (p1_3d + p2_3d + p3_3d) / 3.0
-
-    # 1) Triaxial-style deviatoric stress: q = p1 - p3
-    q_triaxial = p1_3d - p3_3d
-
-    # 2) J2 and critical-state q: q_cs = √(3 J2)
-    #   J2 = 1/6 * [ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]
-    S = (p1_3d - p2_3d) ** 2 + (p2_3d - p3_3d) ** 2 + (p3_3d - p1_3d) ** 2
-    J2 = S / 6.0
-    q_cs = np.sqrt(3.0 * J2)
-
-    # 3) Octahedral shear stress (magnitude): τ_oct = √(2/3) * √(J2)
-    #   Equivalently: τ_oct = (1/3) * √[ (p1-p2)^2 + (p2-p3)^2 + (p3-p1)^2 ]
-    q_oct = (1.0 / 3.0) * np.sqrt(S)
-
-    return np.stack([p1_3d, p2_3d, p3_3d, sig_vm, p_mean, q_triaxial, q_cs, q_oct, tau_max, theta_deg], axis=-1)
+def _octahedral_stress(p1, p2, p3):
+    I1 = p1 + p2 + p3
+    J2 = 1 / 6.0 * ((p1 - p2) ** 2 + (p2 - p3) ** 2 + (p3 - p1) ** 2)
+    sig_oct = I1 / 3.0
+    tau_oct = np.sqrt(2.0 / 3.0 * J2)
+    return sig_oct, tau_oct
 
 
-def _stress_measures_brittle_only(p1_3d, p2_3d, p3_3d, tau_max, theta_deg):
-    """
-    Example of an extra 'brittle' material type.
+def _sig_mohr_coulomb_sy(p1, p2, p3, syc, syt):
+    m = syc / (syt + 1e-10)
+    K = (m - 1.0) / (m + 1.0)
+    t12 = np.abs(p1 - p2) + K * (p1 + p2)
+    t13 = np.abs(p1 - p3) + K * (p1 + p3)
+    t23 = np.abs(p2 - p3) + K * (p2 + p3)
+    tmax = np.maximum(np.maximum(t12, t13), t23)
+    mc_eq = 0.5 * (m + 1.0) * tmax
+    return mc_eq, syc
 
-    Returns only principal stresses and maximum shear, which are
-    more relevant for brittle materials (concrete, rock, etc.).
 
-    Returns array [..., 7] = [p1_3d, p2_3d, p3_3d, tau_max, theta_deg]
-    """
-    return np.stack([p1_3d, p2_3d, p3_3d, tau_max, theta_deg], axis=-1)
+def _sig_mohr_coulomb_c_phi(p1, p2, p3, c, phi):
+    cos_phi = np.cos(phi)
+    tan_phi = np.tan(phi)
+
+    def pair_eq(si, sj):
+        tau_ij = 0.5 * np.abs(si - sj)
+        sig_ij = 0.5 * (si + sj)
+        return tau_ij / cos_phi - sig_ij * tan_phi
+
+    eq12 = pair_eq(p1, p2)
+    eq13 = pair_eq(p1, p3)
+    eq23 = pair_eq(p2, p3)
+    sigma_eq = np.maximum(np.maximum(eq12, eq13), eq23)
+    intensity = c
+    return sigma_eq, intensity
 
 
-def _stress_measures_principal_only(p1_3d, p2_3d, p3_3d, theta_deg):
-    """
-    Example of an extra 'brittle' or 'principal' material type.
+def _sig_drucker_prager_sy(p1, p2, p3, syc, syt):
+    m = syc / (syt + 1e-10)
+    I1 = p1 + p2 + p3
+    diff_sq = (p1 - p2) ** 2 + (p2 - p3) ** 2 + (p3 - p1) ** 2
+    q_part = np.sqrt(0.5 * diff_sq)
 
-    Returns only principal stresses and rotation angle.
+    sigma_eq = 0.5 * (m - 1.0) * I1 + 0.5 * (m + 1.0) * q_part
 
-    Returns array [..., 7] = [p1_3d, p2_3d, p3_3d, theta_deg]
-    """
-    return np.stack([p1_3d, p2_3d, p3_3d, theta_deg], axis=-1)
+    return sigma_eq, syc
+
+
+def _sig_drucker_prager_c_phi(p1, p2, p3, c, phi, kind):
+    I1 = p1 + p2 + p3
+    J2 = ((p1 - p2) ** 2 + (p2 - p3) ** 2 + (p3 - p1) ** 2) / 6.0
+    sqrtJ2 = np.sqrt(J2)
+
+    sin_phi = np.sin(phi)
+    cos_phi = np.cos(phi)
+
+    if kind.lower() == "circumscribed":  # circumscribed
+        A = 6.0 * c * cos_phi / (np.sqrt(3.0) * (3.0 - sin_phi))
+        B = 2.0 * sin_phi / (np.sqrt(3.0) * (3.0 - sin_phi))
+    elif kind.lower() == "middle":  # middle
+        A = 6.0 * c * cos_phi / (np.sqrt(3.0) * (3.0 + sin_phi))
+        B = 2.0 * sin_phi / (np.sqrt(3.0) * (3.0 + sin_phi))
+    elif kind.lower() == "inscribed":  # inscribed
+        A = 3.0 * c * cos_phi / np.sqrt(9.0 + 3.0 * sin_phi**2)
+        B = sin_phi / np.sqrt(9.0 + 3.0 * sin_phi**2)
+    else:
+        raise ValueError("kind must be 'circumscribed', 'middle', or 'inscribed'.")  # noqa: TRY003
+    sigma_eq = sqrtJ2 - B * I1  # equivalent stress
+    sigma_y = A  # intensity
+    return sigma_eq, sigma_y
 
 
 def _get_nodal_pore_pressure(node_tags):

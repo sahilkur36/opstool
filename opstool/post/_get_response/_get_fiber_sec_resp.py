@@ -33,6 +33,8 @@ class FiberSecData:
                 diffs = list(set(ele_tags) - set(all_ele_tags))
                 cls.FUTURE_ELE_TAGS.extend(diffs)
                 cls.CURRENT_ELE_TAGS = list(set(ele_tags) - set(diffs))
+            else:
+                cls.CURRENT_ELE_TAGS = ele_tags
 
         for ele_tag in cls.CURRENT_ELE_TAGS:
             ele_tag = int(ele_tag)

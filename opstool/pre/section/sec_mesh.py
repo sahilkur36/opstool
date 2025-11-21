@@ -5,8 +5,10 @@ SecMesh: A module to mesh the cross-section with triangular fibers
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
+import matplotlib.tri as mtri
 import numpy as np
 import openseespy.opensees as ops
+from matplotlib.cm import ScalarMappable
 from matplotlib.collections import PatchCollection
 from rich.table import Table
 from sectionproperties.analysis.section import Section
@@ -351,11 +353,11 @@ class FiberSecMesh:
         self.section_geom = None
         self.section_mesh_sizes = None
         # ------------------------
-        self.fibrt_points = None
-        self.fiber_cells_map = {}
-        self.fiber_centers_map = {}
-        self.fiber_areas_map = {}
-        self.centroid = None
+        self.fiber_points = None  # fiber points N x 2
+        self.fiber_cells_map = {}  # key: geom name, value: fiber cells (i, j, k)
+        self.fiber_centers_map = {}  # key: geom name, value: fiber centers
+        self.fiber_areas_map = {}  # key: geom name, value: fiber areas
+        self.centroid = None  # (cx, cy)
         self.geom_area = 0.0
         self.area = 0.0
         self.Iy = 0.0
@@ -370,7 +372,7 @@ class FiberSecMesh:
         self.geom_names = []
 
         # *rebar data
-        self.rebar_data = []
+        self.rebar_data = []  # list of dict
 
         # * section geo props
         self.sec_props = {}
@@ -621,8 +623,9 @@ class FiberSecMesh:
     def _get_mesh_data(self):
         # * mesh data
         vertices = self.mesh_obj["vertices"]
-        self.points = np.array(vertices)
+        self.fiber_points = np.array(vertices)
         triangles = self.mesh_obj["triangles"][:, :3]
+        # * fiber cells map
         triangle_attributes = self.mesh_obj["triangle_attributes"]
         attributes = np.unique(triangle_attributes)
         attributes = np.atleast_1d(attributes)
@@ -948,10 +951,10 @@ class FiberSecMesh:
         list, [ztop, zbot, yright, yleft]
             z axis top, z axis bottom, y-axis right, y-axis left
         """
-        ymax = self.points[:, 0].max()
-        ymin = self.points[:, 0].min()
-        zmax = self.points[:, 1].max()
-        zmin = self.points[:, 1].min()
+        ymax = self.fiber_points[:, 0].max()
+        ymin = self.fiber_points[:, 0].min()
+        zmax = self.fiber_points[:, 1].max()
+        zmin = self.fiber_points[:, 1].min()
         ztop = abs(zmax - self.centroid[1])
         zbot = abs(zmin - self.centroid[1])
         yleft = abs(ymin - self.centroid[0])
@@ -1166,7 +1169,7 @@ class FiberSecMesh:
         # self.section.calculate_geometric_properties()
         (area, ixx_c, iyy_c, ixy_c, j, phi) = self.section.calculate_frame_properties(solver_type="direct")
         cx, cy = (0.0, 0.0) if self.is_centring else self.section.get_c()
-        # self.section.section_props.calculate_centroidal_properties(self.points)
+        # self.section.section_props.calculate_centroidal_properties(self.fiber_points)
         if self.section.is_composite():
             self.section.calculate_geometric_properties()
             zxx_plus, zxx_minus, zyy_plus, zyy_minus = self.section.get_ez(Eref)
@@ -1316,7 +1319,7 @@ class FiberSecMesh:
         alpha: float = 0.75,
         **kargs,
     ):
-        """Calculates the cross-section stress resulting from design actions and returns
+        """Calculates the cross-section elastic stress resulting from design actions and returns
         a list of dictionaries containing the cross-section stresses for each region by
         method :py:meth:`~opstool.preprocessing.SecMesh.assign_group`.
 
@@ -1467,7 +1470,7 @@ class FiberSecMesh:
         ---------
         None
         """
-        self.points -= self.centroid
+        self.fiber_points -= self.centroid
         names = self.fiber_centers_map.keys()
         # move fibers
         for name in names:
@@ -1511,8 +1514,8 @@ class FiberSecMesh:
             xo, yo = rot_point
 
         if not remesh:
-            x_rot, y_rot = sec_rotation(self.points[:, 0], self.points[:, 1], theta, xo=xo, yo=yo)
-            self.points[:, 0], self.points[:, 1] = x_rot, y_rot
+            x_rot, y_rot = sec_rotation(self.fiber_points[:, 0], self.fiber_points[:, 1], theta, xo=xo, yo=yo)
+            self.fiber_points[:, 0], self.fiber_points[:, 1] = x_rot, y_rot
 
             names = self.fiber_centers_map.keys()
             for name in names:
@@ -1566,6 +1569,9 @@ class FiberSecMesh:
         ----------
         None
         """
+        if not self.is_centring:
+            self.centring()
+
         if GJ is None:
             if G is None:
                 raise ValueError("GJ and G need to assign at least one!")  # noqa: TRY003
@@ -1632,6 +1638,9 @@ class FiberSecMesh:
         ---------
         None
         """
+        if not self.is_centring:
+            self.centring()
+
         if GJ is None:
             if G is None:
                 raise ValueError("GJ and G need to assign at least one!")  # noqa: TRY003
@@ -1730,25 +1739,16 @@ class FiberSecMesh:
         if not self.color_map:
             for name in self.geom_group_map:
                 self.color_map[name] = get_random_color()
-        vertices = self.points
-        if aspect_ratio is None:
-            x = vertices[:, 0]
-            y = vertices[:, 1]
-            aspect_ratio = (np.max(y) - np.min(y)) / (np.max(x) - np.min(x))
-            if aspect_ratio <= 0.333:
-                aspect_ratio = 0.333
-            if aspect_ratio >= 3:
-                aspect_ratio = 3
-        return self._plot_mpl(fill, aspect_ratio, show_legend=show_legend, ax=ax)
+        return self._plot_mpl(fill, show_legend=show_legend, ax=ax)
 
-    def _plot_mpl(self, fill, aspect_ratio, show_legend: bool = True, ax=None):
+    def _plot_mpl(self, fill, show_legend: bool = True, ax=None):
         # matplotlib plot
         figsize = 6, 6
         if ax is None:
-            fig, ax = plt.subplots(figsize=figsize)
+            _, ax = plt.subplots(figsize=figsize)
 
         # view the mesh
-        vertices = self.points  # the coords of each triangle vertex
+        vertices = self.fiber_points  # the coords of each triangle vertex
         x = vertices[:, 0]
         y = vertices[:, 1]
         for name, faces in self.fiber_cells_map.items():
@@ -1799,7 +1799,7 @@ class FiberSecMesh:
                 rebar_colors.append(color)
                 ax.plot([], [], "o", label=name, color=color)
 
-        ax.set_aspect(aspect_ratio, adjustable='datalim')
+        # ax.set_aspect(aspect_ratio, adjustable="datalim")
         ax.set_title(self.sec_name, fontsize=16)
         if show_legend:
             ax.legend(
@@ -1813,11 +1813,294 @@ class FiberSecMesh:
             )
         ax.set_xlabel("y", fontsize=15)
         ax.set_ylabel("z", fontsize=15)
-        ax.tick_params(labelsize=12)
-        ax.autoscale()
-        plt.tight_layout()
+        ax.tick_params(direction="out")
+        ax.set_xlim(vertices[:, 0].min(), vertices[:, 0].max())
+        ax.set_ylim(vertices[:, 1].min(), vertices[:, 1].max())
+        ax.set_aspect("equal")
+        plt.tight_layout(pad=0, rect=[0, 0, 1, 1])
         # plt.show()
         return ax
+
+    # ---------------------------------------------------------------------------
+    # The following functions are used to process a given response visualization.
+    # ---------------------------------------------------------------------------
+
+    def _reshape_resp(self, points, response) -> np.ndarray:
+        points = np.array(points)
+        response = np.array(response)
+        fiber_points = self.fiber_points
+        # fibers
+        fiber_centers, fiber_cells, fiber_mat_tags, fiber_areas = [], [], [], []
+        for name in self.fiber_centers_map:
+            matTag = self.mat_ops_map[name]
+            cells = self.fiber_cells_map[name]
+            fiber_centers.extend(self.fiber_centers_map[name])
+            fiber_cells.extend(cells)
+            fiber_mat_tags.extend([matTag] * len(cells))
+            fiber_areas.extend(self.fiber_areas_map[name])
+        fiber_centers = np.array(fiber_centers)
+        fiber_cells = np.array(fiber_cells)
+        fiber_mat_tags = np.array(fiber_mat_tags)
+        fiber_areas = np.array(fiber_areas)
+        # rebars
+        rebar_points, rebar_mat_tags, rebar_areas = [], [], []
+        for data in self.rebar_data:
+            rebar_xy = data["rebar_xy"]
+            dia = data["dia"]
+            matTag = data["matTag"]
+            rebar_points.extend(rebar_xy)
+            rebar_mat_tags.extend([matTag] * len(rebar_xy))
+            rebar_areas.extend([np.pi / 4 * dia**2] * len(rebar_xy))
+        rebar_points = np.array(rebar_points)
+        rebar_mat_tags = np.array(rebar_mat_tags)
+        rebar_areas = np.array(rebar_areas)
+
+        # Find nearest neighbor indices
+        from scipy.spatial import cKDTree
+
+        tree = cKDTree(points)
+
+        if len(fiber_centers) > 0:
+            _, idx_f = tree.query(fiber_centers)
+            resp_fiber = response[idx_f]
+        else:
+            resp_fiber = []
+
+        if len(rebar_points) > 0:
+            _, idx_r = tree.query(rebar_points)
+            resp_rebar = response[idx_r]
+        else:
+            resp_rebar = []
+
+        return (
+            fiber_points,
+            fiber_cells,
+            fiber_mat_tags,
+            fiber_areas,
+            resp_fiber,
+            rebar_points,
+            rebar_mat_tags,
+            rebar_areas,
+            resp_rebar,
+        )
+
+    @staticmethod
+    def _check_exceed_by_tag(values, tags, thresholds):
+        """
+        Return boolean mask where True = keep, False = remove
+        based on per-mat_tag tension/compression limits.
+
+        thresholds: dict[int, float or (neg_lim, pos_lim)]
+        - scalar thr: interpreted as (thr, -thr)
+        - tuple (neg_lim, pos_lim): tension/compression limits
+        """
+        keep = np.ones_like(values, dtype=bool)
+
+        if thresholds is None:
+            return keep
+
+        unique_tags = np.unique(tags)
+
+        for tag in unique_tags:
+            thr = thresholds.get(int(tag))
+            if thr is None:
+                continue
+
+            # Convert scalar threshold to (pos_lim, neg_lim)
+            if np.isscalar(thr):
+                if thr < 0:
+                    neg_lim = float(thr)
+                    pos_lim = 1e16  # large positive number
+                else:
+                    pos_lim = float(thr)
+                    neg_lim = -1e16  # large negative number
+            else:
+                neg_lim, pos_lim = thr
+                pos_lim = float(pos_lim)
+                neg_lim = float(neg_lim)
+
+            tag_mask = tags == tag
+            v = values[tag_mask]
+
+            # Exceed conditions:
+            #   v > pos_lim  (over-tension)
+            #   v < neg_lim  (over-compression)
+            exceed = (v > pos_lim) | (v < neg_lim)
+
+            keep[tag_mask] = ~exceed
+
+        return keep
+
+    def _filter_by_tag_and_threshold(self, values, tags, mat_tag_set=None, thresholds=None):
+        """Return mask selecting elements after mat_tag + threshold filtering."""
+        if values is None or len(values) == 0:
+            return None
+        mask = np.ones_like(values, dtype=bool)
+        if mat_tag_set is not None:
+            mask &= np.isin(tags, list(mat_tag_set))
+        if thresholds is not None:
+            mask &= self._check_exceed_by_tag(values, tags, thresholds)
+        return mask
+
+    @staticmethod
+    def _set_plot_props(fiber_points, centers, ax):
+        xs, ys = [], []
+        if fiber_points.size:
+            xs.append(fiber_points[:, 0])
+            ys.append(fiber_points[:, 1])
+        if centers is not None:
+            xs.append(centers[:, 0])
+            ys.append(centers[:, 1])
+
+        if xs:
+            xs = np.concatenate(xs)
+            ys = np.concatenate(ys)
+            ax.set_xlim(xs.min(), xs.max())
+            ax.set_ylim(ys.min(), ys.max())
+
+        ax.set_xlabel("y")
+        ax.set_ylabel("z")
+        ax.set_aspect("equal")
+        ax.tick_params(direction="out")
+        plt.tight_layout(pad=0, rect=[0, 0, 1, 1])
+
+    def plot_response(
+        self,
+        points: Union[np.ndarray, list],
+        response: Union[np.ndarray, list],
+        mat_tag: Optional[Union[int, list, tuple]] = None,
+        thresholds: Optional[dict] = None,
+        ax: Optional[plt.Axes] = None,
+        cmap: str = "coolwarm",
+    ):
+        """Plot the section response at given points.
+        The responses can be from results of OpenSees analysis.
+
+        Parameters
+        -----------
+        points : np.ndarray or list
+            The coordinates of the points to plot the response at.
+            This is the center points of fibers.
+        response : np.ndarray or list
+            The response values at the given points.
+            It should be the same length as points.
+        mat_tag : int, optional
+            Material tag(s) to be visualized. If None, all material tags are visualized.
+            If int, only the specified material tag is visualized.
+            If list or tuple, only the specified material tags are visualized.
+        ax : matplotlib.axes.Axes, optional
+            The axes to plot the section response. If None, a new figure and axes are created.
+        cmap : str, optional
+            Matplotlib color map, by default 'coolwarm'
+        thresholds: dict[int, float or (neg_lim, pos_lim)]
+            Per-material tag tension/compression limits for filtering the response.
+            Exceeding fibers/rebars are not plotted.
+            - scalar thr, compression(-) or tension(+) limits
+            - tuple (neg_lim, pos_lim): compression/tension limits
+
+        Returns
+        --------
+        ax : matplotlib.axes.Axes
+            The axes with the section response plotted.
+        cbar : matplotlib.colorbar.Colorbar
+            The colorbar of the section response.
+        """
+
+        (
+            fiber_points,
+            fiber_cells,
+            fiber_mat_tags,
+            _,
+            resp_fiber,
+            rebar_points,
+            rebar_mat_tags,
+            rebar_areas,
+            resp_rebar,
+        ) = self._reshape_resp(points, response)
+
+        # Determine the set of material tags to be visualized
+        mat_tag_set = None if mat_tag is None else {int(mat_tag)} if np.isscalar(mat_tag) else {int(t) for t in mat_tag}
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(6, 6))
+        else:
+            fig = ax.get_figure()
+
+        # --------------------------------------------------
+        # 1. filter fiber mesh
+        # --------------------------------------------------
+        if fiber_points.size > 0 and fiber_cells.size > 0:
+            fiber_mask = self._filter_by_tag_and_threshold(resp_fiber, fiber_mat_tags, mat_tag_set, thresholds)
+            if fiber_mask is not None:
+                triangles = fiber_cells[fiber_mask]
+                vals_cell = resp_fiber[fiber_mask]
+            else:
+                triangles, vals_cell = None, None
+        else:
+            triangles, vals_cell = None, None
+
+        # --------------------------------------------------
+        # 2. filter rebar
+        # --------------------------------------------------
+        if rebar_points.size > 0:
+            rebar_mask = self._filter_by_tag_and_threshold(resp_rebar, rebar_mat_tags, mat_tag_set, thresholds)
+            if rebar_mask is not None:
+                centers = rebar_points[rebar_mask]
+                radii = np.sqrt(rebar_areas[rebar_mask] / np.pi)
+                vals_rebar = resp_rebar[rebar_mask]
+            else:
+                centers, radii, vals_rebar = None, None, None
+        else:
+            centers, radii, vals_rebar = None, None, None
+
+        # --------------------------------------------------
+        # 3. build unified colormap
+        # --------------------------------------------------
+        vals_all = (
+            np.concatenate([arr for arr in (vals_cell, vals_rebar) if arr is not None and len(arr) > 0])
+            if ((vals_cell is not None) or (vals_rebar is not None))
+            else None
+        )
+
+        if vals_all is not None:
+            vmin, vmax = np.nanmin(vals_all), np.nanmax(vals_all)
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
+            cmap_obj = plt.cm.get_cmap(cmap)
+            mappable = ScalarMappable(norm=norm, cmap=cmap_obj)
+        else:
+            norm, cmap_obj, mappable = None, None, None
+
+        # --------------------------------------------------
+        # 4. plot fibers
+        # --------------------------------------------------
+        if triangles is not None and vals_cell is not None and norm is not None:
+            triang = mtri.Triangulation(fiber_points[:, 0], fiber_points[:, 1], triangles)
+            ax.tripcolor(triang, facecolors=vals_cell, norm=norm, cmap=cmap_obj)
+            ax.triplot(triang, linewidth=0.2, color="k", alpha=0.5)
+
+        # --------------------------------------------------
+        # 5. plot rebars
+        # --------------------------------------------------
+        if centers is not None and radii is not None and vals_rebar is not None:
+            for (cx, cy), r, v in zip(centers, radii, vals_rebar):
+                ax.add_patch(plt.Circle((cx, cy), r, color=cmap_obj(norm(v)), ec="k", linewidth=0.5))
+
+        # --------------------------------------------------
+        # 6. colorbar
+        # --------------------------------------------------
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="4%", pad="5%")  # 控制宽度和间距
+        cbar = fig.colorbar(mappable, cax=cax)
+        # cbar = fig.colorbar(mappable, ax=ax) if mappable is not None else None
+
+        # --------------------------------------------------
+        # 7. axis + labels
+        # --------------------------------------------------
+        self._set_plot_props(fiber_points, centers, ax)
+
+        return ax, cbar
 
 
 def sec_rotation(x, y, theta, xo=0, yo=0):

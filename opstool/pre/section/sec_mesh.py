@@ -353,7 +353,15 @@ class FiberSecMesh:
         self.section_geom = None
         self.section_mesh_sizes = None
         # ------------------------
-        self.fiber_points = None  # fiber points N x 2
+        self.fiber_points = None  # fiber points N x 2, triangles vertices
+        self.fiber_centers = None  # fiber cell centers Ncell x 2
+        self.fiber_areas = None  # fiber cell areas Ncell x 1
+        self.fiber_cells = None  # fiber cell connectivities Ncell x 3
+        self.fiber_mat_tags = None  # fiber cell mat tags Ncell x 1
+        self.rebar_points = None  # rebar points N x 2
+        self.rebar_areas = None  # rebar areas N x 1
+        self.rebar_mat_tags = None  # rebar mat tags N x 1
+
         self.fiber_cells_map = {}  # key: geom name, value: fiber cells (i, j, k)
         self.fiber_centers_map = {}  # key: geom name, value: fiber centers
         self.fiber_areas_map = {}  # key: geom name, value: fiber areas
@@ -1828,61 +1836,60 @@ class FiberSecMesh:
     def _reshape_resp(self, points, response) -> np.ndarray:
         points = np.array(points)
         response = np.array(response)
-        fiber_points = self.fiber_points
-        # fibers
-        fiber_centers, fiber_cells, fiber_mat_tags, fiber_areas = [], [], [], []
-        for name in self.fiber_centers_map:
-            matTag = self.mat_ops_map[name]
-            cells = self.fiber_cells_map[name]
-            fiber_centers.extend(self.fiber_centers_map[name])
-            fiber_cells.extend(cells)
-            fiber_mat_tags.extend([matTag] * len(cells))
-            fiber_areas.extend(self.fiber_areas_map[name])
-        fiber_centers = np.array(fiber_centers)
-        fiber_cells = np.array(fiber_cells)
-        fiber_mat_tags = np.array(fiber_mat_tags)
-        fiber_areas = np.array(fiber_areas)
-        # rebars
-        rebar_points, rebar_mat_tags, rebar_areas = [], [], []
-        for data in self.rebar_data:
-            rebar_xy = data["rebar_xy"]
-            dia = data["dia"]
-            matTag = data["matTag"]
-            rebar_points.extend(rebar_xy)
-            rebar_mat_tags.extend([matTag] * len(rebar_xy))
-            rebar_areas.extend([np.pi / 4 * dia**2] * len(rebar_xy))
-        rebar_points = np.array(rebar_points)
-        rebar_mat_tags = np.array(rebar_mat_tags)
-        rebar_areas = np.array(rebar_areas)
+
+        if self.fiber_centers is None:
+            # fibers
+            fiber_centers, fiber_cells, fiber_mat_tags, fiber_areas = [], [], [], []
+            for name in self.fiber_centers_map:
+                matTag = self.mat_ops_map[name]
+                cells = self.fiber_cells_map[name]
+                fiber_centers.extend(self.fiber_centers_map[name])
+                fiber_cells.extend(cells)
+                fiber_mat_tags.extend([matTag] * len(cells))
+                fiber_areas.extend(self.fiber_areas_map[name])
+
+            self.fiber_centers = np.array(fiber_centers)
+            self.fiber_areas = np.array(fiber_areas)
+            self.fiber_cells = np.array(fiber_cells)
+            self.fiber_mat_tags = np.array(fiber_mat_tags)
+
+        if self.rebar_points is None:
+            # rebars
+            rebar_points, rebar_mat_tags, rebar_areas = [], [], []
+            for data in self.rebar_data:
+                rebar_xy = data["rebar_xy"]
+                dia = data["dia"]
+                matTag = data["matTag"]
+                rebar_points.extend(rebar_xy)
+                rebar_mat_tags.extend([matTag] * len(rebar_xy))
+                rebar_areas.extend([np.pi / 4 * dia**2] * len(rebar_xy))
+
+            self.rebar_points = np.array(rebar_points)
+            self.rebar_areas = np.array(rebar_areas)
+            self.rebar_mat_tags = np.array(rebar_mat_tags)
 
         # Find nearest neighbor indices
         from scipy.spatial import cKDTree
 
         tree = cKDTree(points)
 
-        if len(fiber_centers) > 0:
-            _, idx_f = tree.query(fiber_centers)
-            resp_fiber = response[idx_f]
+        if hasattr(self, "idx_f"):
+            resp_fiber = response[self.idx_f]
+        elif len(self.fiber_centers) > 0:
+            _, self.idx_f = tree.query(self.fiber_centers)
+            resp_fiber = response[self.idx_f]
         else:
             resp_fiber = []
 
-        if len(rebar_points) > 0:
-            _, idx_r = tree.query(rebar_points)
-            resp_rebar = response[idx_r]
+        if hasattr(self, "idx_r"):
+            resp_rebar = response[self.idx_r]
+        elif len(self.rebar_points) > 0:
+            _, self.idx_r = tree.query(self.rebar_points)
+            resp_rebar = response[self.idx_r]
         else:
             resp_rebar = []
 
-        return (
-            fiber_points,
-            fiber_cells,
-            fiber_mat_tags,
-            fiber_areas,
-            resp_fiber,
-            rebar_points,
-            rebar_mat_tags,
-            rebar_areas,
-            resp_rebar,
-        )
+        return resp_fiber, resp_rebar
 
     @staticmethod
     def _check_exceed_by_tag(values, tags, thresholds):
@@ -2005,18 +2012,7 @@ class FiberSecMesh:
         cbar : matplotlib.colorbar.Colorbar
             The colorbar of the section response.
         """
-
-        (
-            fiber_points,
-            fiber_cells,
-            fiber_mat_tags,
-            _,
-            resp_fiber,
-            rebar_points,
-            rebar_mat_tags,
-            rebar_areas,
-            resp_rebar,
-        ) = self._reshape_resp(points, response)
+        resp_fiber, resp_rebar = self._reshape_resp(points, response)
 
         # Determine the set of material tags to be visualized
         mat_tag_set = None if mat_tag is None else {int(mat_tag)} if np.isscalar(mat_tag) else {int(t) for t in mat_tag}
@@ -2029,10 +2025,10 @@ class FiberSecMesh:
         # --------------------------------------------------
         # 1. filter fiber mesh
         # --------------------------------------------------
-        if fiber_points.size > 0 and fiber_cells.size > 0:
-            fiber_mask = self._filter_by_tag_and_threshold(resp_fiber, fiber_mat_tags, mat_tag_set, thresholds)
+        if self.fiber_points.size > 0 and self.fiber_cells.size > 0:
+            fiber_mask = self._filter_by_tag_and_threshold(resp_fiber, self.fiber_mat_tags, mat_tag_set, thresholds)
             if fiber_mask is not None:
-                triangles = fiber_cells[fiber_mask]
+                triangles = self.fiber_cells[fiber_mask]
                 vals_cell = resp_fiber[fiber_mask]
             else:
                 triangles, vals_cell = None, None
@@ -2042,11 +2038,11 @@ class FiberSecMesh:
         # --------------------------------------------------
         # 2. filter rebar
         # --------------------------------------------------
-        if rebar_points.size > 0:
-            rebar_mask = self._filter_by_tag_and_threshold(resp_rebar, rebar_mat_tags, mat_tag_set, thresholds)
+        if self.rebar_points.size > 0:
+            rebar_mask = self._filter_by_tag_and_threshold(resp_rebar, self.rebar_mat_tags, mat_tag_set, thresholds)
             if rebar_mask is not None:
-                centers = rebar_points[rebar_mask]
-                radii = np.sqrt(rebar_areas[rebar_mask] / np.pi)
+                centers = self.rebar_points[rebar_mask]
+                radii = np.sqrt(self.rebar_areas[rebar_mask] / np.pi)
                 vals_rebar = resp_rebar[rebar_mask]
             else:
                 centers, radii, vals_rebar = None, None, None
@@ -2074,7 +2070,7 @@ class FiberSecMesh:
         # 4. plot fibers
         # --------------------------------------------------
         if triangles is not None and vals_cell is not None and norm is not None:
-            triang = mtri.Triangulation(fiber_points[:, 0], fiber_points[:, 1], triangles)
+            triang = mtri.Triangulation(self.fiber_points[:, 0], self.fiber_points[:, 1], triangles)
             ax.tripcolor(triang, facecolors=vals_cell, norm=norm, cmap=cmap_obj)
             ax.triplot(triang, linewidth=0.2, color="k", alpha=0.5)
 
@@ -2098,7 +2094,7 @@ class FiberSecMesh:
         # --------------------------------------------------
         # 7. axis + labels
         # --------------------------------------------------
-        self._set_plot_props(fiber_points, centers, ax)
+        self._set_plot_props(self.fiber_points, centers, ax)
 
         return ax, cbar
 

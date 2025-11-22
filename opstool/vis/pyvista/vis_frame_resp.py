@@ -135,6 +135,8 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
         fmt = self.pargs.scalar_bar_kargs["fmt"]
         labels = [f"{fmt}" % label for label in labels]
         label_poins = np.array(label_points)
+        if isinstance(show_values, str) and show_values.lower() in ["maxmin", "minmax"]:
+            labels = [f"Min: {labels[0]}", f"Max: {labels[1]}"]
         return resp_points, resp_cells, scalars, labels, label_poins
 
     def _make_title(self, scalars, step, time):
@@ -236,6 +238,13 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
         )
 
         if show_values:
+            if isinstance(show_values, str) and show_values.lower() in ["maxmin", "minmax"]:
+                shape_opacity = 100.0
+                shape = "rounded_rect"
+            else:
+                shape_opacity = 0.0
+                shape = None
+
             label_grid = plotter.add_point_labels(
                 label_poins,
                 labels,
@@ -244,8 +253,9 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
                 font_family="courier",
                 bold=False,
                 always_visible=True,
-                shape=None,
-                shape_opacity=0.0,
+                shape_color="#c0fb2d",
+                shape=shape,
+                shape_opacity=shape_opacity,
                 show_points=False,
             )
         else:
@@ -305,6 +315,10 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
             title_grid.SetText(3, self._make_title(scalars, step, self.time[step]))
 
         if label_grid:
+            if isinstance(show_values, str) and show_values.lower() in ["maxmin", "minmax"]:
+                shape_opacity = 100.0
+            else:
+                shape_opacity = 0.0
             # mapper = label_grid.GetMapper()
             text_property = pv.TextProperty(
                 bold=False,
@@ -318,7 +332,7 @@ class PlotFrameResponse(PlotFrameResponseBase, PlotResponsePyvistaBase):
                 labels,
                 text_property=text_property,
                 renderer=plotter.renderer,
-                shape_opacity=0.0,
+                shape_opacity=shape_opacity,
                 always_visible=True,
             )
 

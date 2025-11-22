@@ -73,6 +73,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
         show_hover: bool = True,
+        show_max_min: bool = False,
     ):
         step = round(value)
         line_cells, _ = self._get_line_cells(self._get_line_da(step))
@@ -143,6 +144,22 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
             show_hover=show_hover,
         )
 
+        if show_max_min:
+            idxs = [np.argmin(scalars), np.argmax(scalars)]
+            ps = node_defo_coords[idxs]
+            labels = ["Min", "Max"]
+            txt_plot = go.Scatter3d(
+                x=ps[:, 0],
+                y=ps[:, 1],
+                z=ps[:, 2],
+                text=labels,
+                mode="markers+text",
+                marker={"size": self.pargs.point_size + 2, "color": "#b790d4", "symbol": "x"},
+                textfont={"color": "#5170d7", "size": self.pargs.font_size, "weight": "bold"},
+                name="Max/Min Values",
+            )
+            plotter.append(txt_plot)
+
     def plot_slide(
         self,
         alpha=1.0,
@@ -152,6 +169,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
         show_mp_constraint: bool = True,
         style="surface",
         show_origin=False,
+        show_max_min: bool = False,
     ):
         cmin, cmax, _ = self._get_resp_clim_peak()
         clim = (cmin, cmax)
@@ -171,6 +189,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
                 show_mp_constraint=show_mp_constraint,
                 style=style,
                 show_origin=show_origin,
+                show_max_min=show_max_min,
             )
             self.FIGURE.add_traces(plotter)
             ndatas.append(len(self.FIGURE.data) - ndata_cum)
@@ -187,6 +206,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
         show_mp_constraint: bool = True,
         style="surface",
         show_origin=False,
+        show_max_min: bool = False,
     ):
         cmin, cmax, step = self._get_resp_clim_peak(idx=step)
         clim = (cmin, cmax)
@@ -203,6 +223,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
             show_mp_constraint=show_mp_constraint,
             style=style,
             show_origin=show_origin,
+            show_max_min=show_max_min,
         )
         self.FIGURE.add_traces(plotter)
         txt = self._make_title(step)
@@ -226,6 +247,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
         show_mp_constraint: bool = True,
         style="surface",
         show_origin=False,
+        show_max_min: bool = False,
     ):
         if framerate is None:
             framerate = np.ceil(self.num_steps / 10)
@@ -251,6 +273,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
                 style=style,
                 show_origin=show_origin,
                 show_hover=False,
+                show_max_min=show_max_min,
             )
             frames.append(go.Frame(data=plotter, name="step:" + str(i)))
         # Add data to be displayed before animation starts
@@ -266,6 +289,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePlotlyBase):
             style=style,
             show_origin=show_origin,
             show_hover=False,
+            show_max_min=show_max_min,
         )
         self.FIGURE = go.Figure(frames=frames, data=plotter0)
 
@@ -288,6 +312,7 @@ def plot_nodal_responses(
     show_undeformed: bool = False,
     style: str = "surface",
     show_outline: bool = False,
+    show_max_min: bool = False,
 ) -> go.Figure:
     """Visualizing Node Responses.
 
@@ -346,6 +371,8 @@ def plot_nodal_responses(
         Visualization mesh style of surfaces and solids.
         One of the following: style='surface', style='wireframe', style='points', style='points_gaussian'.
         Defaults to 'surface'. Note that 'wireframe' only shows a wireframe of the outer geometry.
+    show_max_min: bool, default: False
+        Whether to show the maximum and minimum response value annotations in the plot.
 
     Returns
     -------
@@ -367,6 +394,7 @@ def plot_nodal_responses(
             show_mp_constraint=show_mp_constraint,
             style=style,
             show_origin=show_undeformed,
+            show_max_min=show_max_min,
         )
     else:
         plotbase.plot_peak_step(
@@ -378,6 +406,7 @@ def plot_nodal_responses(
             show_mp_constraint=show_mp_constraint,
             style=style,
             show_origin=show_undeformed,
+            show_max_min=show_max_min,
         )
     return plotbase.update_fig(show_outline=show_outline)
 
@@ -397,6 +426,7 @@ def plot_nodal_responses_animation(
     show_undeformed: bool = False,
     style: str = "surface",
     show_outline: bool = False,
+    show_max_min: bool = False,
 ) -> go.Figure:
     """Visualize node response animation.
 
@@ -445,6 +475,8 @@ def plot_nodal_responses_animation(
         Visualization mesh style of surfaces and solids.
         One of the following: style='surface' or style='wireframe'
         Defaults to 'surface'. Note that 'wireframe' only shows a wireframe of the outer geometry.
+    show_max_min: bool, default: False
+        Whether to show the maximum and minimum response value annotations in the plot.
 
     Returns
     -------
@@ -466,5 +498,6 @@ def plot_nodal_responses_animation(
         show_mp_constraint=show_mp_constraint,
         style=style,
         show_origin=show_undeformed,
+        show_max_min=show_max_min,
     )
     return plotbase.update_fig(show_outline=show_outline)

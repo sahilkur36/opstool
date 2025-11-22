@@ -7,7 +7,7 @@ import pyvista as pv
 from ...post import loadODB
 from .._plot_nodal_resp_base import PlotNodalResponseBase
 from .plot_resp_base import PlotResponsePyvistaBase
-from .plot_utils import PLOT_ARGS, _plot_all_mesh_cmap
+from .plot_utils import PLOT_ARGS, _plot_all_mesh_cmap, _update_point_label_actor
 
 
 class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
@@ -103,6 +103,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         bc_scale: float = 1.0,
         show_mp_constraint: bool = False,
         cpos="iso",
+        show_max_min: bool = True,
     ):
         step = round(value)
         line_cells, _ = self._get_line_cells(self._get_line_da(step))
@@ -141,6 +142,22 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             title_prop = scalar_bar.GetTitleTextProperty()
             # title_prop.SetJustificationToRight()
             title_prop.BoldOn()
+
+        # Max Min Labels
+        if show_max_min:
+            idxs = [np.argmax(scalars), np.argmin(scalars)]
+            labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
+            max_min_label_grid = plotter.add_point_labels(
+                node_defo_coords[idxs],
+                labels,
+                point_size=self.pargs.point_size + 10,
+                font_size=self.pargs.font_size + 5,
+                shape_color="#c0fb2d",
+                always_visible=True,
+            )
+        else:
+            max_min_label_grid = None
+
         if show_outline:
             self._plot_outline(plotter)
         bc_grid, mp_grid = None, None
@@ -149,7 +166,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         if show_mp_constraint:
             mp_grid = self._plot_mp_constraint(plotter, step, defo_scale=alpha)
         self._update_plotter(plotter, cpos=cpos)
-        return point_grid, line_grid, solid_grid, scalar_bar, bc_grid, mp_grid
+        return point_grid, line_grid, solid_grid, scalar_bar, bc_grid, mp_grid, max_min_label_grid
 
     def _update_mesh(
         self,
@@ -160,8 +177,10 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         scalar_bar=None,
         bc_grid=None,
         mp_grid=None,
+        max_min_label_grid=None,
         alpha=1.0,
         bc_scale: float = 1.0,
+        plotter=None,
     ):
         step = round(value)
         t_ = self.time[step]
@@ -184,6 +203,22 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             self._plot_mp_constraint_update(mp_grid, step, defo_scale=alpha)
         if bc_grid:
             self._plot_bc_update(bc_grid, step, defo_scale=alpha, bc_scale=bc_scale)
+        if max_min_label_grid:
+            idxs = [np.argmax(scalars), np.argmin(scalars)]
+            labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
+            text_property = pv.TextProperty(
+                bold=True,
+                font_size=self.pargs.font_size + 10,
+            )
+            _update_point_label_actor(
+                max_min_label_grid,
+                node_defo_coords[idxs],
+                labels,
+                text_property=text_property,
+                renderer=plotter.renderer,
+                shape_opacity=100.0,
+                always_visible=True,
+            )
 
     def plot_slide(
         self,
@@ -197,6 +232,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         show_outline=False,
         show_origin=False,
         cpos="iso",
+        show_max_min: bool = True,
         **kargs,
     ):
         cmin, cmax, _ = self._get_resp_clim_peak()
@@ -215,9 +251,10 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                 show_outline=show_outline,
                 show_origin=show_origin,
                 cpos=cpos,
+                show_max_min=show_max_min,
             )
         else:
-            point_grid, line_grid, solid_grid, cbar, bc_grid, mp_grid = self._create_mesh(
+            point_grid, line_grid, solid_grid, cbar, bc_grid, mp_grid, max_min_label_grid = self._create_mesh(
                 plotter,
                 self.num_steps - 1,
                 alpha=alpha_,
@@ -229,6 +266,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                 show_outline=show_outline,
                 show_origin=show_origin,
                 cpos=cpos,
+                show_max_min=show_max_min,
             )
             func = partial(
                 self._update_mesh,
@@ -240,6 +278,8 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                 mp_grid=mp_grid,
                 alpha=alpha_,
                 bc_scale=bc_scale,
+                max_min_label_grid=max_min_label_grid,
+                plotter=plotter,
                 **kargs,
             )
         plotter.add_slider_widget(func, [0, self.num_steps - 1], value=self.num_steps - 1, **self.slider_widget_args)
@@ -257,6 +297,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         show_outline=False,
         show_origin=False,
         cpos="iso",
+        show_max_min: bool = True,
     ):
         cmin, cmax, step = self._get_resp_clim_peak(idx=step)
         clim = (cmin, cmax)
@@ -273,6 +314,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
             show_outline=show_outline,
             show_origin=show_origin,
             cpos=cpos,
+            show_max_min=show_max_min,
         )
 
     def plot_anim(
@@ -289,6 +331,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
         show_outline=False,
         show_origin=False,
         cpos="iso",
+        show_max_min: bool = True,
     ):
         if framerate is None:
             framerate = np.ceil(self.num_steps / 10)
@@ -314,10 +357,11 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                     show_outline=show_outline,
                     show_origin=show_origin,
                     cpos=cpos,
+                    show_max_min=show_max_min,
                 )
                 plotter.write_frame()
         else:
-            point_grid, line_grid, solid_grid, scalar_bar, bc_grid, mp_grid = self._create_mesh(
+            point_grid, line_grid, solid_grid, scalar_bar, bc_grid, mp_grid, max_min_label_grid = self._create_mesh(
                 plotter,
                 self.num_steps - 1,
                 alpha=alpha_,
@@ -328,6 +372,7 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                 show_outline=show_outline,
                 show_origin=show_origin,
                 cpos=cpos,
+                show_max_min=show_max_min,
             )
             plotter.write_frame()
             for step in range(self.num_steps):
@@ -341,6 +386,8 @@ class PlotNodalResponse(PlotNodalResponseBase, PlotResponsePyvistaBase):
                     mp_grid=mp_grid,
                     alpha=alpha_,
                     bc_scale=bc_scale,
+                    max_min_label_grid=max_min_label_grid,
+                    plotter=plotter,
                 )
                 plotter.write_frame()
 
@@ -355,6 +402,7 @@ def plot_nodal_responses(
     resp_dof: Union[list, tuple, str] = ("UX", "UY", "UZ"),
     unit_symbol: Optional[str] = None,
     unit_factor: Optional[float] = None,
+    show_max_min: bool = True,
     cpos: str = "iso",
     show_bc: bool = True,
     bc_scale: float = 1.0,
@@ -403,6 +451,8 @@ def plot_nodal_responses(
         The multiplier used to convert units.
         For example, if you want to visualize stress and the current data unit is kPa, you can set ``unit_symbol="kPa" and unit_factor=1.0``.
         If you want to visualize in MPa, you can set ``unit_symbol="MPa" and unit_factor=0.001``.
+    show_max_min: bool, default: True
+        Whether to show the maximum and minimum labels on the plot.
     cpos: str, default: iso
         Model display perspective, optional: "iso", "xy", "yx", "xz", "zx", "yz", "zy".
         If 3d, defaults to "iso". If 2d, defaults to "xy".
@@ -456,6 +506,7 @@ def plot_nodal_responses(
             show_outline=show_outline,
             show_origin=show_undeformed,
             cpos=cpos,
+            show_max_min=show_max_min,
         )
     else:
         plotbase.plot_peak_step(
@@ -470,6 +521,7 @@ def plot_nodal_responses(
             show_outline=show_outline,
             show_origin=show_undeformed,
             cpos=cpos,
+            show_max_min=show_max_min,
         )
     if PLOT_ARGS.anti_aliasing:
         plotter.enable_anti_aliasing(PLOT_ARGS.anti_aliasing)
@@ -490,6 +542,7 @@ def plot_nodal_responses_animation(
     show_bc: bool = False,
     bc_scale: float = 1.0,
     show_mp_constraint: bool = False,
+    show_max_min: bool = True,
     cpos: str = "iso",
     show_undeformed: bool = False,
     style: str = "surface",
@@ -535,6 +588,8 @@ def plot_nodal_responses_animation(
         Scale the size of boundary support display.
     show_mp_constraint: bool, default: False
         Whether to show multipoint (MP) constraint.
+    show_max_min: bool, default: True
+        Whether to show the maximum and minimum labels on the plot.
     cpos: str, default: iso
         Model display perspective, optional: "iso", "xy", "yx", "xz", "zx", "yz", "zy".
         If 3d, defaults to "iso". If 2d, defaults to "xy".
@@ -583,6 +638,7 @@ def plot_nodal_responses_animation(
         show_outline=show_outline,
         show_origin=show_undeformed,
         cpos=cpos,
+        show_max_min=show_max_min,
     )
     if PLOT_ARGS.anti_aliasing:
         plotter.enable_anti_aliasing(PLOT_ARGS.anti_aliasing)

@@ -34,6 +34,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
         show_bc: bool = True,
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
+        show_max_min: bool = False,
     ):
         step = round(value)
         tags, pos, cells, cell_types = self._make_unstru_info(ele_tags, step)
@@ -90,6 +91,22 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
         if self.title is None:
             self._set_title()
 
+        if show_max_min:
+            idxs = [np.argmin(face_scalars), np.argmax(face_scalars)]
+            ps = face_points[idxs]
+            labels = ["Min", "Max"]
+            txt_plot = go.Scatter3d(
+                x=ps[:, 0],
+                y=ps[:, 1],
+                z=ps[:, 2],
+                text=labels,
+                mode="markers+text",
+                marker={"size": self.pargs.point_size + 2, "color": "#b790d4", "symbol": "x"},
+                textfont={"color": "#5170d7", "size": self.pargs.font_size, "weight": "bold"},
+                name="Max/Min Values",
+            )
+            plotter.append(txt_plot)
+
     def _make_title(self, step, add_title=False):
         resp = self.resp_step[step].to_numpy()
         maxv, minv = np.nanmax(resp), np.nanmin(resp)
@@ -145,6 +162,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
         show_bc: bool = True,
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
+        show_max_min: bool = False,
     ):
         _, clim = self._get_resp_peak()
         alpha_ = defo_scale if show_defo else 0.0
@@ -165,6 +183,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
                 show_bc=show_bc,
                 bc_scale=bc_scale,
                 show_mp_constraint=show_mp_constraint,
+                show_max_min=show_max_min,
             )
             self.FIGURE.add_traces(plotter)
             ndatas.append(len(self.FIGURE.data) - ndata_cum)
@@ -184,6 +203,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
         show_bc: bool = True,
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
+        show_max_min: bool = False,
     ):
         max_step, clim = self._get_resp_peak(idx=step)
         alpha_ = defo_scale if show_defo else 0.0
@@ -201,6 +221,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
             show_bc=show_bc,
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
+            show_max_min=show_max_min,
         )
         self.FIGURE.add_traces(plotter)
         txt = self._make_title(max_step)
@@ -225,6 +246,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
         show_bc: bool = True,
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
+        show_max_min: bool = False,
     ):
         if framerate is None:
             framerate = np.ceil(self.num_steps / 11)
@@ -251,6 +273,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
                 show_bc=show_bc,
                 bc_scale=bc_scale,
                 show_mp_constraint=show_mp_constraint,
+                show_max_min=show_max_min,
             )
             frames.append(go.Frame(data=plotter, name="step:" + str(i)))
         # Add data to be displayed before animation starts
@@ -268,6 +291,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePlotlyBase):
             show_bc=show_bc,
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
+            show_max_min=show_max_min,
         )
         self.FIGURE = go.Figure(frames=frames, data=plotter0)
         # self.title = self._make_txt(0, add_title=True)
@@ -295,6 +319,7 @@ def plot_unstruct_responses(
     bc_scale: float = 1.0,
     show_mp_constraint: bool = False,
     show_model: bool = False,
+    show_max_min: bool = False,
 ) -> go.Figure:
     """Visualizing unstructured element (Shell, Plane, Brick) Response.
 
@@ -418,6 +443,8 @@ def plot_unstruct_responses(
     show_model: bool, default: False
         Whether to plot the all model or not.
         Set to False can improve the performance of the visualization.
+    show_max_min: bool, default: False
+        Whether to show the maximum and minimum response values in the plot.
 
     Returns
     -------
@@ -444,6 +471,7 @@ def plot_unstruct_responses(
             show_bc=show_bc,
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
+            show_max_min=show_max_min,
         )
     else:
         plotbase.plot_peak_step(
@@ -457,6 +485,7 @@ def plot_unstruct_responses(
             show_bc=show_bc,
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
+            show_max_min=show_max_min,
         )
     return plotbase.update_fig(show_outline)
 
@@ -480,6 +509,7 @@ def plot_unstruct_responses_animation(
     bc_scale: float = 1.0,
     show_mp_constraint: bool = False,
     show_model: bool = True,
+    show_max_min: bool = False,
 ) -> go.Figure:
     """Unstructured element (Shell, Plane, Brick) response animation.
 
@@ -597,6 +627,8 @@ def plot_unstruct_responses_animation(
     show_model: bool, default: False
         Whether to plot the all model or not.
         Set to False can improve the performance of the visualization.
+    show_max_min: bool, default: False
+        Whether to show the maximum and minimum response values in the plot.
 
     Returns
     -------
@@ -623,5 +655,6 @@ def plot_unstruct_responses_animation(
         show_bc=show_bc,
         bc_scale=bc_scale,
         show_mp_constraint=show_mp_constraint,
+        show_max_min=show_max_min,
     )
     return plotbase.update_fig(show_outline)

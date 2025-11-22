@@ -7,7 +7,7 @@ import pyvista as pv
 from ...post import loadODB
 from .._plot_unstru_resp_base import PlotUnstruResponseBase
 from .plot_resp_base import PlotResponsePyvistaBase
-from .plot_utils import PLOT_ARGS, _plot_unstru_cmap
+from .plot_utils import PLOT_ARGS, _plot_unstru_cmap, _update_point_label_actor
 
 
 class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
@@ -87,6 +87,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         show_bc: bool = True,
         bc_scale: float = 1.0,
         show_mp_constraint: bool = False,
+        show_max_min: bool = False,
     ):
         step = round(value)
         node_no_deform_coords = np.array(self._get_node_da(step))
@@ -120,6 +121,21 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             # title_prop.SetJustificationToRight()
             title_prop.BoldOn()
 
+        # Max Min Labels
+        if show_max_min:
+            idxs = [np.argmax(scalars), np.argmin(scalars)]
+            labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
+            max_min_label_grid = plotter.add_point_labels(
+                pos[idxs],
+                labels,
+                point_size=self.pargs.point_size + 10,
+                font_size=self.pargs.font_size + 5,
+                shape_color="#c0fb2d",
+                always_visible=True,
+            )
+        else:
+            max_min_label_grid = None
+
         if show_outline:
             self._plot_outline(plotter)
         bc_grid, mp_grid = None, None
@@ -129,7 +145,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             mp_grid = self._plot_mp_constraint(plotter, step, defo_scale=defo_scale)
 
         self._update_plotter(plotter, cpos)
-        return resp_plot, scalar_bar, bc_grid, mp_grid
+        return resp_plot, scalar_bar, bc_grid, mp_grid, max_min_label_grid
 
     def _update_mesh(
         self,
@@ -139,8 +155,10 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         scalar_bar,
         bc_grid=None,
         mp_grid=None,
+        max_min_label_grid=None,
         defo_scale=1.0,
         bc_scale: float = 1.0,
+        plotter=None,
     ):
         step = round(step)
         pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale)
@@ -158,6 +176,23 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         if bc_grid:
             self._plot_bc_update(bc_grid, step, defo_scale=defo_scale, bc_scale=bc_scale)
 
+        if max_min_label_grid:
+            idxs = [np.argmax(scalars), np.argmin(scalars)]
+            labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
+            text_property = pv.TextProperty(
+                bold=True,
+                font_size=self.pargs.font_size + 10,
+            )
+            _update_point_label_actor(
+                max_min_label_grid,
+                pos[idxs],
+                labels,
+                text_property=text_property,
+                renderer=plotter.renderer,
+                shape_opacity=100.0,
+                always_visible=True,
+            )
+
     def plot_slide(
         self,
         plotter,
@@ -171,6 +206,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
         show_outline=False,
+        show_max_min: bool = True,
     ):
         _, clim = self._get_resp_peak()
         alpha_ = defo_scale if show_defo else 0.0
@@ -188,9 +224,10 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                 show_bc=show_bc,
                 bc_scale=bc_scale,
                 show_mp_constraint=show_mp_constraint,
+                show_max_min=show_max_min,
             )
         else:
-            resp_plot, scalar_bar, bc_grid, mp_grid = self._create_mesh(
+            resp_plot, scalar_bar, bc_grid, mp_grid, max_min_label_grid = self._create_mesh(
                 plotter,
                 self.num_steps - 1,
                 ele_tags=ele_tags,
@@ -203,6 +240,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                 show_bc=show_bc,
                 bc_scale=bc_scale,
                 show_mp_constraint=show_mp_constraint,
+                show_max_min=show_max_min,
             )
             func = partial(
                 self._update_mesh,
@@ -213,6 +251,8 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                 mp_grid=mp_grid,
                 bc_scale=bc_scale,
                 defo_scale=alpha_,
+                max_min_label_grid=max_min_label_grid,
+                plotter=plotter,
             )
         plotter.add_slider_widget(func, [0, self.num_steps - 1], value=self.num_steps - 1, **self.slider_widget_args)
 
@@ -230,6 +270,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
         show_outline=False,
+        show_max_min: bool = True,
     ):
         step, clim = self._get_resp_peak(idx=step)
         alpha_ = defo_scale if show_defo else 0.0
@@ -246,6 +287,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             show_bc=show_bc,
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
+            show_max_min=show_max_min,
         )
 
     def plot_anim(
@@ -263,6 +305,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         bc_scale: float = 1.0,
         show_mp_constraint: bool = True,
         show_outline=False,
+        show_max_min: bool = True,
     ):
         if framerate is None:
             framerate = np.ceil(self.num_steps / 11)
@@ -289,10 +332,11 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                     show_bc=show_bc,
                     bc_scale=bc_scale,
                     show_mp_constraint=show_mp_constraint,
+                    show_max_min=show_max_min,
                 )
                 plotter.write_frame()
         else:
-            resp_plot, scalar_bar, bc_grid, mp_grid = self._create_mesh(
+            resp_plot, scalar_bar, bc_grid, mp_grid, max_min_label_grid = self._create_mesh(
                 plotter,
                 0,
                 ele_tags=ele_tags,
@@ -305,6 +349,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                 show_bc=show_bc,
                 bc_scale=bc_scale,
                 show_mp_constraint=show_mp_constraint,
+                show_max_min=show_max_min,
             )
             plotter.write_frame()
             for step in range(1, self.num_steps):
@@ -317,6 +362,8 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
                     mp_grid=mp_grid,
                     bc_scale=bc_scale,
                     defo_scale=alpha_,
+                    max_min_label_grid=max_min_label_grid,
+                    plotter=plotter,
                 )
                 plotter.write_frame()
 
@@ -341,6 +388,7 @@ def plot_unstruct_responses(
     show_outline: bool = False,
     cpos: str = "iso",
     show_model: bool = True,
+    show_max_min: bool = True,
 ) -> pv.Plotter:
     """Visualizing unstructured element (Shell, Plane, Brick) Response.
 
@@ -456,6 +504,8 @@ def plot_unstruct_responses(
         If 3d, defaults to "iso". If 2d, defaults to "xy".
     show_model: bool, default: True
         Whether to plot the all model or not.
+    show_max_min: bool, default: True
+        Whether to show the maximum and minimum response value labels.
 
     Returns
     -------
@@ -496,6 +546,7 @@ def plot_unstruct_responses(
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
             show_outline=show_outline,
+            show_max_min=show_max_min,
         )
     else:
         plotbase.plot_peak_step(
@@ -511,6 +562,7 @@ def plot_unstruct_responses(
             bc_scale=bc_scale,
             show_mp_constraint=show_mp_constraint,
             show_outline=show_outline,
+            show_max_min=show_max_min,
         )
     if PLOT_ARGS.anti_aliasing:
         plotter.enable_anti_aliasing(PLOT_ARGS.anti_aliasing)
@@ -538,6 +590,7 @@ def plot_unstruct_responses_animation(
     show_outline: bool = False,
     cpos: str = "iso",
     show_model: bool = True,
+    show_max_min: bool = True,
 ) -> pv.Plotter:
     """Unstructured element (Shell, Plane, Brick) response animation.
 
@@ -652,6 +705,8 @@ def plot_unstruct_responses_animation(
         If 3d, defaults to "iso". If 2d, defaults to "xy".
     show_model: bool, default: True
         Whether to plot the all model or not.
+    show_max_min: bool, default: True
+        Whether to show the maximum and minimum response value labels.
 
     Returns
     -------
@@ -695,6 +750,7 @@ def plot_unstruct_responses_animation(
         bc_scale=bc_scale,
         show_mp_constraint=show_mp_constraint,
         show_outline=show_outline,
+        show_max_min=show_max_min,
     )
     if PLOT_ARGS.anti_aliasing:
         plotter.enable_anti_aliasing(PLOT_ARGS.anti_aliasing)

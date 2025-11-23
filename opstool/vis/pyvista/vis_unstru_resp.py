@@ -125,14 +125,27 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         if show_max_min:
             idxs = [np.argmax(scalars), np.argmin(scalars)]
             labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
-            max_min_label_grid = plotter.add_point_labels(
-                pos[idxs],
-                labels,
-                point_size=self.pargs.point_size + 10,
-                font_size=self.pargs.font_size + 5,
-                shape_color="#c0fb2d",
-                always_visible=True,
-            )
+            if len(scalars) == len(pos):
+                ps = pos[idxs]
+            elif len(scalars) == len(cells):
+                cell_max = cells[idxs[0], 1:]
+                cell_min = cells[idxs[1], 1:]
+                ps_max = np.mean(pos[cell_max, :], axis=0)
+                ps_min = np.mean(pos[cell_min, :], axis=0)
+                ps = np.vstack([ps_max, ps_min])
+            else:
+                ps = None
+            if ps is not None:
+                max_min_label_grid = plotter.add_point_labels(
+                    ps,
+                    labels,
+                    point_size=self.pargs.point_size + 10,
+                    font_size=self.pargs.font_size + 5,
+                    shape_color="#c0fb2d",
+                    always_visible=True,
+                )
+            else:
+                max_min_label_grid = None
         else:
             max_min_label_grid = None
 

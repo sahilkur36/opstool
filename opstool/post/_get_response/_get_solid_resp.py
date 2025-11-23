@@ -41,7 +41,7 @@ class BrickRespStepData(ResponseBase):
         self.dtype = {"int": np.int32, "float": np.float32}
         if isinstance(dtype, dict):
             self.dtype.update(dtype)
-        self.include_pore_pressure = True
+        self.include_pore_pressure = bool(compute_nodal_resp)
         if compute_measures in [True, "All", "all", "ALL"]:
             self.measures = {"principal": [], "von_mises": [], "octahedral": [], "tau_max": []}
         elif isinstance(compute_measures, dict):
@@ -186,7 +186,10 @@ class BrickRespStepData(ResponseBase):
                 coords["nodeTags"] = self.node_tags
             self.resp_steps = xr.Dataset(data_vars=data_vars, coords=coords, attrs=self.attrs)
 
-        if np.abs(self.resp_steps["PorePressureAtNodes"].data).sum() < 1e-10:
+        if (
+            "PorePressureAtNodes" in self.resp_steps
+            and np.abs(self.resp_steps["PorePressureAtNodes"].data).sum() < 1e-10
+        ):
             self.resp_steps = self.resp_steps.drop_vars("PorePressureAtNodes")
 
         if self.compute_measures:

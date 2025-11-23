@@ -39,7 +39,7 @@ class PlaneRespStepData(ResponseBase):
         self.nodal_resp_method = compute_nodal_resp
         self.model_update = model_update
         self.dtype = {"int": np.int32, "float": np.float32}
-        self.include_pore_pressure = True
+        self.include_pore_pressure = bool(compute_nodal_resp)
 
         if compute_measures in [True, "All", "all", "ALL"]:
             self.measures = {"principal": [], "von_mises": [], "octahedral": [], "tau_max": []}
@@ -189,7 +189,10 @@ class PlaneRespStepData(ResponseBase):
                 coords["nodeTags"] = self.node_tags
             self.resp_steps = xr.Dataset(data_vars=data_vars, coords=coords, attrs=self.attrs)
 
-        if np.abs(self.resp_steps["PorePressureAtNodes"].data).sum() < 1e-10:
+        if (
+            "PorePressureAtNodes" in self.resp_steps
+            and np.abs(self.resp_steps["PorePressureAtNodes"].data).sum() < 1e-10
+        ):
             self.resp_steps = self.resp_steps.drop_vars("PorePressureAtNodes")
 
         if self.compute_measures:

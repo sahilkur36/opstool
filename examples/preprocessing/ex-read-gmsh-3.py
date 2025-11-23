@@ -198,7 +198,7 @@ gmsh.model.addPhysicalGroup(1, all_lines, 1, "AllLines")
 gmsh.option.setNumber("Mesh.SaveAll", 1)
 gmsh.model.mesh.generate(1)
 
-gmsh.write("utils/dome.msh")
+# gmsh.write("utils/dome.msh")
 
 # gmsh.fltk.run()  # Uncomment to visualize the mesh
 

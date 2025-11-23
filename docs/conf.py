@@ -10,11 +10,17 @@ import os
 import sys
 from pathlib import Path
 
+import gmsh
 import plotly.io as pio
 import pyvista
 from plotly.io._sg_scraper import plotly_sg_scraper
 from pyvista.plotting.utilities.sphinx_gallery import DynamicScraper
 from sphinx_gallery.sorting import FileNameSortKey
+
+gmsh.initialize()
+
+gmsh.option.setNumber("General.Terminal", 0)
+gmsh.option.setNumber("General.Verbosity", 0)
 
 pio.renderers.default = "sphinx_gallery"
 
@@ -124,8 +130,8 @@ plot_formats = ["png"]
 pyvista_plot_include_source = True
 
 sphinx_gallery_conf = {
-    "examples_dirs": ["quick-start", "../examples"],
-    "gallery_dirs": ["auto_examples/quick-start", "auto_examples/examples"],
+    "examples_dirs": ["quick-start", "../examples", "src/vis"],
+    "gallery_dirs": ["auto_examples/quick-start", "auto_examples/examples", "auto_examples/vis-guide"],
     "image_scrapers": (DynamicScraper(), plotly_sg_scraper, "matplotlib"),
     "download_all_examples": False,
     "remove_config_comments": True,

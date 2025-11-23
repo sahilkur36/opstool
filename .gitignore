@@ -15,6 +15,11 @@ __pycache__/
 # C extensions
 *.so
 
+
+*.nc
+*.zarr
+*.zarr/
+
 # Distribution / packaging
 .Python
 build/

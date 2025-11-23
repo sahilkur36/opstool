@@ -163,7 +163,7 @@ Contents
 
    src/pre/index
    src/post/index
-   src/vis/index.ipynb
+   auto_examples/vis-guide/index
    src/analysis/index
 
 .. toctree::
@@ -182,6 +182,12 @@ Contents
    src/api/post
    src/api/vis
    src/api/analysis
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Theory Reference
+
+   src/theory/index.rst
 
 
 

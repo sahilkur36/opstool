@@ -39,6 +39,7 @@
       ~SecMesh.get_section_geometry
       ~SecMesh.get_stress
       ~SecMesh.mesh
+      ~SecMesh.plot_response
       ~SecMesh.rotate
       ~SecMesh.rotate_section_geometry
       ~SecMesh.set_mesh_color

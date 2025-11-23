@@ -39,6 +39,7 @@
       ~FiberSecMesh.get_section_geometry
       ~FiberSecMesh.get_stress
       ~FiberSecMesh.mesh
+      ~FiberSecMesh.plot_response
       ~FiberSecMesh.rotate
       ~FiberSecMesh.rotate_section_geometry
       ~FiberSecMesh.set_mesh_color

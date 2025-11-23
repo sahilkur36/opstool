@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:16.255** total execution time for 21 files **from all galleries**:
+**00:20.659** total execution time for 38 files **from all galleries**:
 
 .. container::
 
@@ -32,31 +32,67 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_examples_vis_ex-vis-megatall.py` (``..\examples\vis\ex-vis-megatall.py``)
-     - 00:07.090
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-3.py` (``..\examples\preprocessing\ex-read-gmsh-3.py``)
+     - 00:16.564
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-sec-props.py` (``..\examples\sec-mesh\ex-sec-props.py``)
-     - 00:03.593
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-4.py` (``..\examples\preprocessing\ex-read-gmsh-4.py``)
-     - 00:02.059
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-rc-section.py` (``..\examples\sec-mesh\ex-rc-section.py``)
-     - 00:01.202
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-composite.py` (``..\examples\sec-mesh\ex-composite.py``)
-     - 00:00.885
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-bridge-deck.py` (``..\examples\sec-mesh\ex-bridge-deck.py``)
-     - 00:00.849
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-cfst.py` (``..\examples\sec-mesh\ex-cfst.py``)
-     - 00:00.577
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-2.py` (``..\examples\preprocessing\ex-read-gmsh-2.py``)
+     - 00:04.096
      - 0.0
    * - :ref:`sphx_glr_auto_examples_quick-start_ex-frame2D.py` (``quick-start\ex-frame2D.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_quick-start_ex-quick-plot-model.py` (``quick-start\ex-quick-plot-model.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-01-model-plotly.py` (``src\vis\plotly\ex-01-model-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-02-eigen-plotly.py` (``src\vis\plotly\ex-02-eigen-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-03-nodal-resp-plotly.py` (``src\vis\plotly\ex-03-nodal-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-04-frame-resp-plotly.py` (``src\vis\plotly\ex-04-frame-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-05-truss-resp-plotly.py` (``src\vis\plotly\ex-05-truss-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-06-shell-resp-plotly.py` (``src\vis\plotly\ex-06-shell-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-07-plane-resp-plotly.py` (``src\vis\plotly\ex-07-plane-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_plotly_ex-08-brick-resp-plotly.py` (``src\vis\plotly\ex-08-brick-resp-plotly.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-01-model-pyvista.py` (``src\vis\pyvista\ex-01-model-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-02-eigen-pyvista.py` (``src\vis\pyvista\ex-02-eigen-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-03-nodal-resp-pyvista.py` (``src\vis\pyvista\ex-03-nodal-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-04-frame-resp-pyvista.py` (``src\vis\pyvista\ex-04-frame-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-05-truss-resp-pyvista.py` (``src\vis\pyvista\ex-05-truss-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-06-shell-resp-pyvista.py` (``src\vis\pyvista\ex-06-shell-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-07-plane-resp-pyvista.py` (``src\vis\pyvista\ex-07-plane-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_vis-guide_pyvista_ex-08-brick-resp-pyvista.py` (``src\vis\pyvista\ex-08-brick-resp-pyvista.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-PressureDependMultiYield-6.py` (``..\examples\postprocessing\ex-PressureDependMultiYield-6.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_examples_postprocessing_ex-cantilever-roll-up.py` (``..\examples\postprocessing\ex-cantilever-roll-up.py``)
@@ -89,9 +125,24 @@ Computation times
    * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-1.py` (``..\examples\preprocessing\ex-read-gmsh-1.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-2.py` (``..\examples\preprocessing\ex-read-gmsh-2.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-4.py` (``..\examples\preprocessing\ex-read-gmsh-4.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_examples_preprocessing_ex-read-gmsh-3.py` (``..\examples\preprocessing\ex-read-gmsh-3.py``)
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-bridge-deck.py` (``..\examples\sec-mesh\ex-bridge-deck.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-cfst.py` (``..\examples\sec-mesh\ex-cfst.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-composite.py` (``..\examples\sec-mesh\ex-composite.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-rc-section.py` (``..\examples\sec-mesh\ex-rc-section.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_sec-mesh_ex-sec-props.py` (``..\examples\sec-mesh\ex-sec-props.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_examples_vis_ex-vis-megatall.py` (``..\examples\vis\ex-vis-megatall.py``)
      - 00:00.000
      - 0.0

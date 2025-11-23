@@ -13,4 +13,4 @@ The following is a guide to the preprocessing features provided by `opstool`.
    unit_system.ipynb
    model_data.ipynb
    loads.ipynb
-   model_mass.ipynb
+   .. model_mass.ipynb

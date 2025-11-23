@@ -11,6 +11,7 @@ Utilities
    :recursive:
 
    opstool.post.set_odb_path
+   opstool.post.set_odb_format
    opstool.post.update_unit_system
    opstool.post.reset_unit_system
 

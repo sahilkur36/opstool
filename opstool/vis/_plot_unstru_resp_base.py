@@ -66,6 +66,10 @@ class PlotUnstruResponseBase(PlotResponseBase):
             else:
                 pos = self._get_node_da(i)
 
+            if "nodeTags" in da.dims:
+                common = np.intersect1d(da.nodeTags.values, pos.nodeTags.values)
+                da = da.sel(nodeTags=common)
+
             resps.append(self._process_scalar_from_da(da, pos, fiber_point))
 
         self.resp_step = resps

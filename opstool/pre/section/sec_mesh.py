@@ -1983,6 +1983,8 @@ class FiberSecMesh:
         """Plot the section response at given points.
         The responses can be from results of OpenSees analysis.
 
+        Added in opstool 1.0.22+.
+
         Parameters
         -----------
         points : np.ndarray or list

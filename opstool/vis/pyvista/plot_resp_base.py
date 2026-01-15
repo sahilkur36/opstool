@@ -34,8 +34,10 @@ class PlotResponsePyvistaBase(PlotResponseBase):
                 actors.append(key)
         if len(actors) > 0:
             plotter.remove_actor(actors)
-        plotter.scalar_bars.clear()
-        # plotter.remove_scalar_bar()
+
+        if hasattr(plotter, "scalar_bars") and hasattr(plotter.scalar_bars, "clear"):
+            plotter.scalar_bars.clear()
+            # plotter.remove_scalar_bar()
 
     def _plot_outline(self, plotter: pv.Plotter):
         plotter.show_bounds(

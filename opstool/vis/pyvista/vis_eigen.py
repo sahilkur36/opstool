@@ -208,6 +208,7 @@ class PlotEigenBase(PlotResponsePyvistaBase):
         return point_plot, line_plot, solid_plot, alpha_, bc_plot, mp_plot
 
     def subplots(self, plotter, modei, modej, link_views=True, **kargs):
+        self.clear_plotter(plotter)
         if modej - modei + 1 > 64:
             raise ValueError("When subplots True, mode_tag range must < 64 for clarify")  # noqa: TRY003
         shape = SHAPE_MAP[modej - modei + 1]

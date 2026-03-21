@@ -756,6 +756,15 @@ def get_nodal_responses_dataset(
     -------
     unstru_grid: `pyvista.UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_.
         Unstructured grid with unstructured cells and response scalars.
+
+        .. important::
+
+            Please refer to the following links for more information on ``pyvista.UnstructuredGrid`` structures:
+
+            * `DataSet <https://docs.pyvista.org/api/core/_autosummary/pyvista.dataset#pyvista.DataSet>`_
+            * `UnstructuredGrid <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgrid#pyvista.UnstructuredGrid>`_
+            * `DataSetFilters <https://docs.pyvista.org/api/core/_autosummary/pyvista.datasetfilters#pyvista.DataSetFilters>`_
+            * `UnstructuredGridFilters <https://docs.pyvista.org/api/core/_autosummary/pyvista.unstructuredgridfilters#pyvista.UnstructuredGridFilters>`_
     """
     plotbase = PlotNodalResponse(odb_tag=odb_tag, lazy_load=lazy_load)
     plotbase.set_comp_resp_type(resp_type=resp_type, component=resp_dof)

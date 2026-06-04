@@ -147,7 +147,7 @@ class NodalRespStepData(ResponseBase):
                 "nodeTags": self.node_tags,
                 "DOFs": ["UX", "UY", "UZ", "RX", "RY", "RZ"],
             }
-            if self.interpolate_beam:
+            if self.interpolate_beam and self.interpolate_beam_coords is not None:
                 data_vars["interpolate_points"] = (
                     ["time", "interpolate_pointID", "interpolate_coords"],
                     self.resp_step_data_dict["interpolate_points"],

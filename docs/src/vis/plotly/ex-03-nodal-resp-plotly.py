@@ -97,3 +97,6 @@ fig = opsvis.plot_nodal_responses_animation(
 )
 fig
 # fig.show()
+
+# %%
+opsvis.plot_nodal_resp_gui(odb_tag=1)

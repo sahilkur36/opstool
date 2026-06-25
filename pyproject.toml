@@ -29,6 +29,7 @@ triangle = ">=20230923"
 gmsh = ">=4.13.1"
 # plotly
 plotly = ">=5.24.1"
+nicegui = ">=2.0.0"
 # pyvista
 pyvista = ">=0.44.1"
 trame = ">=3.7.0"

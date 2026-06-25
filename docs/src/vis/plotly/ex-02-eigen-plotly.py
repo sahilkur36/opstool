@@ -27,6 +27,16 @@ opst.load_ops_examples("ArchBridge")
 # or your model code here
 
 # %%
+# By NiceGUI App
+# ++++++++++++++++++++++++
+opst.post.save_eigen_data(odb_tag=1, mode_tag=20)
+opsvis.plot_eigen_gui(odb_tag=1)
+
+# %%
+# By plot_eigen
+# ++++++++++++++++++++++++
+
+# %%
 # We use the :func:`opstool.vis.plotly.set_plot_props` function to predefine some common visualization properties, which will affect all subsequent visualizations of models, eigenvalues, and responses.
 
 opsvis.set_plot_props(point_size=0, line_width=3)

@@ -23,6 +23,14 @@ opst.load_ops_examples("ArchBridge2")
 # For your own model script, simply place the :func:`opstool.vis.plotly.plot_model` function anywhere you need visualization.
 
 # %%
+# By NiceGUI App
+# ++++++++++++++++
+opsvis.plot_model_gui()
+
+# %%
+# By plot_model
+# ++++++++++++++++++++++++
+# %%
 # QUick visualization
 # ------------------------
 fig = opsvis.plot_model()

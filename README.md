@@ -20,6 +20,17 @@ To use, install `opstool` from [opstool-PyPI](https://pypi.org/project/opstool/)
 pip install --upgrade opstool
 ```
 
+Optional features are installed with extras:
+
+| Command | Includes |
+| --- | --- |
+| `pip install "opstool[plotly]"` | Plotly visualization and NiceGUI apps |
+| `pip install "opstool[pyvista]"` | PyVista/VTK visualization stack |
+| `pip install "opstool[pre]"` | Section mesh preprocessing dependencies |
+| `pip install "opstool[gmsh]"` | Gmsh model import support |
+| `pip install "opstool[pre,plotly]"` | Combined extras, for example preprocessing plus Plotly |
+| `pip install "opstool[all]"` | All optional features |
+
 The restriction on the python version mainly depends on `openseespy`,
 it is recommended that you use [Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) or [Anaconda Distribution](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) to avoid library version incompatibilities.
 
@@ -29,13 +40,13 @@ After installing, open Anaconda Prompt to execute the following code:
 conda create -n opensees python=3.12 numpy scipy pandas xarray notebook matplotlib
 conda activate opensees
 pip install openseespy
-pip install opstool
+pip install "opstool[all]"
 ```
 
 ![image.png](https://s2.loli.net/2025/07/12/WIkihvDXMKBcwJF.png)
 
 * The first line of code will create an environment called ``opensees`` and install Python 3.12 and libraries such as numpy, scipy, pandas, xarray, notebook, matplotlib, etc.
-* Please use ``conda activate opensees`` to activate the environment, and then you can install various third-party packages in the environment, such as ``pip install openseespy`` and ``pip install opstool``.
+* Please use ``conda activate opensees`` to activate the environment, and then you can install various third-party packages in the environment, such as ``pip install openseespy`` and ``pip install "opstool[all]"``.
 * You can also install the packages from [anaconda / packages](https://anaconda.org/anaconda/repo), such as ``conda install conda-forge::scikit-learn``.
 
 ## Document

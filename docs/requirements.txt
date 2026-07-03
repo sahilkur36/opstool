@@ -19,6 +19,7 @@ vtk>=9.4.2
 pyvista[all]
 trame
 plotly
+nicegui
 gmsh
 matplotlib
 openseespy

@@ -14,6 +14,49 @@ Or upgrade:
 
     pip install --upgrade opstool
 
+Optional features
+-----------------
+
+``opstool`` keeps several large visualization and preprocessing dependencies optional. Install only the
+extras you need:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Command
+     - Installed features
+   * - ``pip install "opstool[plotly]"``
+     - Plotly visualization and NiceGUI apps.
+   * - ``pip install "opstool[pyvista]"``
+     - PyVista/VTK visualization stack.
+   * - ``pip install "opstool[pre]"``
+     - Section mesh preprocessing dependencies.
+   * - ``pip install "opstool[gmsh]"``
+     - Gmsh model import support.
+   * - ``pip install "opstool[all]"``
+     - All optional features.
+
+Extras can be combined. For example:
+
+.. code-block:: bash
+
+    pip install "opstool[pre,plotly]"
+    pip install "opstool[pre,plotly,gmsh]"
+
+For local development with Poetry, use:
+
+.. code-block:: bash
+
+    poetry install -E pre -E plotly
+    poetry install -E all
+
+The documentation environment installs all optional runtime features:
+
+.. code-block:: bash
+
+    poetry install --with docs
+
 .. note::
 
    Since version **1.0.1**, this package has undergone major updates, including numerous new features and changes to the API!
@@ -34,7 +77,7 @@ Some Tips
         conda create -n opensees python=3.12 numpy scipy pandas xarray notebook matplotlib
         conda activate opensees
         pip install openseespy
-        pip install opstool
+        pip install "opstool[all]"
     
     From now on, you only need to work in this environment called ``opensees``, including installing packages, executing codes, etc.
 

@@ -65,19 +65,24 @@ fig = opsvis.plot_unstruct_responses(
 fig
 
 # %%
-# Display the responses at each element, all gauss points will be averaged to the element level.
+# Display the responses at each element. By default, all Gauss points are averaged to the element level.
+# You can also set ``gauss_point="max"``, ``gauss_point="min"``, ``gauss_point="absMax"``,
+# ``gauss_point="absMin"``, or pass an integration point tag.
 fig = opsvis.plot_unstruct_responses(
     odb_tag=1,
     slides=True,
     ele_type="Shell",
-    resp_type="sectionForces",  # element response, "AtGaussPoints", will be averaged to each element
+    resp_type="sectionForces",  # element response at Gauss points
     resp_dof="FXX",
+    gauss_point="average",
 )
 # fig.show()
 fig
 
 # %%
 # Fiber point stress can be plotted as well, but it requires a ``shell_fiber_loc`` to be assigned.
+# ``shell_fiber_loc`` accepts "top", "bottom", "middle", "average", "max", "min",
+# "absMax", "absMin", or a fiber point tag.
 # sphinx_gallery_thumbnail_number = 5
 fig = opsvis.plot_unstruct_responses(
     odb_tag=1,
@@ -86,7 +91,7 @@ fig = opsvis.plot_unstruct_responses(
     ele_type="Shell",
     resp_type="StressesAtNodes",  # nodal stress response, "AtNodes"
     resp_dof="sigma11",  # sigma11, sigma22, sigma12, sigma13, sigma23
-    shell_fiber_loc="top",  # shell_fiber_loc can be "top", "bottom", or "mid" for shell elements, also int
+    shell_fiber_loc="max",
 )
 # fig.show()
 fig

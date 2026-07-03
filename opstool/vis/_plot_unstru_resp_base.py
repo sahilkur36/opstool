@@ -1,13 +1,23 @@
 import numpy as np
+import xarray as xr
 
 from ..post import get_element_responses
 from ._plot_resp_base import PlotResponseBase
+
+_TIME_ENVELOPE_STEPS = {
+    "absmaxeach": "absMaxEach",
+    "absmineach": "absMinEach",
+    "maxeach": "maxEach",
+    "mineach": "minEach",
+}
 
 
 class PlotUnstruResponseBase(PlotResponseBase):
     def __init__(self, odb_tag, lazy_load=True):
         super().__init__(odb_tag, lazy_load=lazy_load)
         self.ele_type = "Shell"
+        self.fiber_point = None
+        self.gauss_point = "average"
 
     def _check_input(self):
         if self.ele_type.lower() == "shell":
@@ -34,11 +44,12 @@ class PlotUnstruResponseBase(PlotResponseBase):
         else:
             raise ValueError(f"Invalid element type {self.ele_type}! Valid options are: Shell, Plane, Brick.")  # noqa: TRY003
 
-    def _set_comp_resp_type(self, ele_type, resp_type, component, fiber_point=None):
+    def _set_comp_resp_type(self, ele_type, resp_type, component, fiber_point=None, gauss_point="average"):
         self.ele_type = ele_type
         self.resp_type = resp_type
         self.component = component
         self.fiber_point = fiber_point  # for shell elements only
+        self.gauss_point = _check_resp_point(gauss_point, "Gauss point")
 
         self._check_input()
 
@@ -59,8 +70,12 @@ class PlotUnstruResponseBase(PlotResponseBase):
             tags, cell_types, cells = self._get_unstru_cells(cells)
         return tags, pos, cells, cell_types
 
-    def refactor_resp_step(self, ele_tags, ele_type, resp_type: str, component: str, fiber_point=None):
-        self._set_comp_resp_type(ele_type, resp_type, component, fiber_point=fiber_point)
+    def refactor_resp_step(
+        self, ele_tags, ele_type, resp_type: str, component: str, fiber_point=None, gauss_point="average"
+    ):
+        self._set_comp_resp_type(
+            ele_type, resp_type, component, fiber_point=fiber_point, gauss_point=gauss_point
+        )
         resps = []
 
         for i in range(self.num_steps):
@@ -81,39 +96,103 @@ class PlotUnstruResponseBase(PlotResponseBase):
 
         self.resp_step = resps
 
+    @staticmethod
+    def _reduce_dim(da, dim, point):
+        if isinstance(point, str):
+            point = point.lower()
+        if point in {"average", "avg", "mean"}:
+            return da.mean(dim=dim, skipna=True)
+        if point == "max":
+            return da.max(dim=dim, skipna=True)
+        if point == "min":
+            return da.min(dim=dim, skipna=True)
+        if point == "absmax":
+            idx = np.abs(da).fillna(-np.inf).argmax(dim=dim)
+            return da.isel({dim: idx})
+        if point == "absmin":
+            idx = np.abs(da).fillna(np.inf).argmin(dim=dim)
+            return da.isel({dim: idx})
+        return da.sel({dim: point})
+
+    @staticmethod
+    def _reset_fiber_point(fiber_point, da):
+        if isinstance(fiber_point, str):
+            fiber_point = fiber_point.lower()
+        if fiber_point in {"average", "avg", "mean", "max", "min", "absmax", "absmin"}:
+            return fiber_point
+        if fiber_point == "top":
+            return da.coords["fiberPoints"].values[-1]
+        if fiber_point == "bottom":
+            return da.coords["fiberPoints"].values[0]
+        if fiber_point in {"middle", "mid"}:
+            return da.coords["fiberPoints"].values[len(da.coords["fiberPoints"]) // 2]
+        return fiber_point
+
     def _process_scalar_from_da(self, da, pos, fiber_point):
         """process the response data array to extract scalar values."""
-
-        def _reset_fiber_point(fiber_point, da):
-            if fiber_point == "top":
-                fiber_point = da.coords["fiberPoints"].values[-1]
-            elif fiber_point == "bottom":
-                fiber_point = da.coords["fiberPoints"].values[0]
-            elif fiber_point == "middle":
-                fiber_point = da.coords["fiberPoints"].values[len(da.coords["fiberPoints"]) // 2]
-            return fiber_point
 
         if "nodeTags" in da.dims:  # response at nodes
             scalars = pos.sel(coords="x").copy() * 0
             if "fiberPoints" in da.dims:  # response at fiber points (shells)
-                fiber_point = _reset_fiber_point(fiber_point, da)
-                da = da.sel(fiberPoints=fiber_point)
+                fiber_point = self._reset_fiber_point(fiber_point, da)
+                da = self._reduce_dim(da, "fiberPoints", fiber_point)
             scalars.loc[{"nodeTags": da.coords["nodeTags"]}] = da
             return scalars
 
         if "fiberPoints" in da.dims and "GaussPoints" in da.dims:  # response at fiber points and Gauss points (shells)
-            fiber_point = _reset_fiber_point(fiber_point, da)
-            da = da.sel(fiberPoints=fiber_point)
-            return da.sel(fiberPoints=fiber_point).mean(dim="GaussPoints", skipna=True)
+            fiber_point = self._reset_fiber_point(fiber_point, da)
+            da = self._reduce_dim(da, "fiberPoints", fiber_point)
+            return self._reduce_dim(da, "GaussPoints", self.gauss_point)
 
         if "GaussPoints" in da.dims:  # response at Gauss points
-            return da.mean(dim="GaussPoints", skipna=True)
+            return self._reduce_dim(da, "GaussPoints", self.gauss_point)
 
         return da  # fallback: return raw data
 
+    @staticmethod
+    def _is_time_envelope_step(step):
+        return isinstance(step, str) and step.lower() in _TIME_ENVELOPE_STEPS
+
+    @staticmethod
+    def _normalize_time_envelope_step(step):
+        return _TIME_ENVELOPE_STEPS[step.lower()]
+
+    def _get_resp_at_step(self, step):
+        if self._is_time_envelope_step(step):
+            return self._get_resp_time_envelope(step)
+        return self.resp_step[step]
+
+    def _get_plot_step(self, step):
+        if self._is_time_envelope_step(step):
+            return 0
+        return round(step)
+
+    def _get_resp_time_envelope(self, step):
+        step = self._normalize_time_envelope_step(step)
+        dim = "_time_step"
+        da = xr.concat(self.resp_step, dim=dim)
+        if step == "maxEach":
+            return da.max(dim=dim, skipna=True)
+        if step == "minEach":
+            return da.min(dim=dim, skipna=True)
+        if step == "absMaxEach":
+            idx = np.abs(da).fillna(-np.inf).argmax(dim=dim)
+            return da.isel({dim: idx})
+        if step == "absMinEach":
+            idx = np.abs(da).fillna(np.inf).argmin(dim=dim)
+            return da.isel({dim: idx})
+        raise ValueError(  # noqa: TRY003
+            "Invalid time envelope step, one of [absMaxEach, absMinEach, maxEach, minEach]"
+        )
+
     def _get_resp_peak(self, idx=None):
         if isinstance(idx, str):
-            if idx.lower() == "absmax":
+            if self._is_time_envelope_step(idx):
+                step = self._normalize_time_envelope_step(idx)
+                resp = self._get_resp_time_envelope(step)
+                resp_values = resp.to_numpy()
+                return step, (float(np.nanmin(resp_values)), float(np.nanmax(resp_values)))
+            elif idx.lower() == "absmax":
                 resp = [np.nanmax(np.abs(data)) for data in self.resp_step]
                 step = np.argmax(resp)
             elif idx.lower() == "max":
@@ -126,7 +205,10 @@ class PlotUnstruResponseBase(PlotResponseBase):
                 resp = [np.nanmin(data) for data in self.resp_step]
                 step = np.argmin(resp)
             else:
-                raise ValueError("Invalid argument, one of [absMax, absMin, Max, Min]")  # noqa: TRY003
+                raise ValueError(  # noqa: TRY003
+                    "Invalid argument, one of "
+                    "[absMax, absMin, Max, Min, absMaxEach, absMinEach, maxEach, minEach]"
+                )
         elif isinstance(idx, (int, float)):
             step = int(idx)
         else:
@@ -202,8 +284,23 @@ def _check_input_shell(resp_type, resp_dof, fiber_pts=None):
             fiber_pts = "top"
         elif isinstance(fiber_pts, str):
             fiber_pts = fiber_pts.lower()
-            if fiber_pts not in {"top", "bottom", "middle"}:
-                raise ValueError(f"Not supported fiber points {fiber_pts}! Valid options are: top, bottom, middle.")  # noqa: TRY003
+            if fiber_pts not in {
+                "top",
+                "bottom",
+                "middle",
+                "mid",
+                "average",
+                "avg",
+                "mean",
+                "max",
+                "min",
+                "absmax",
+                "absmin",
+            }:
+                raise ValueError(  # noqa: TRY003
+                    f"Not supported fiber points {fiber_pts}! "
+                    "Valid options are: top, bottom, middle, average, max, min, absMax, absMin."
+                )
         else:
             fiber_pts = int(fiber_pts)
 
@@ -213,6 +310,23 @@ def _check_input_shell(resp_type, resp_dof, fiber_pts=None):
         )
 
     return resp_type, resp_dof, fiber_pts
+
+
+def _check_resp_point(point, name):
+    if point is None:
+        return "average"
+    if isinstance(point, str):
+        point = point.lower()
+        if point in {"average", "avg", "mean", "max", "min", "absmax", "absmin"}:
+            return point
+        try:
+            return int(point)
+        except ValueError as exc:
+            raise ValueError(  # noqa: TRY003
+                f"Not supported {name} {point}! "
+                "Valid options are: average, max, min, absMax, absMin, or an integer point tag."
+            ) from exc
+    return int(point)
 
 
 def _check_input_plane(resp_type, resp_dof):

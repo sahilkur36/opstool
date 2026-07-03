@@ -39,7 +39,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         }
         lines = [
             f"{info['step']} (step)",
-            f"{info['time']:.3f} (time)",
+            "Envelope (time)" if time is None else f"{info['time']:.3f} (time)",
             f"{info['min']:.3E} (min)",
             f"{info['max']:.3E} (max)",
             "",
@@ -50,6 +50,9 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         if self.fiber_point and "Sec" not in resp_type and self.ele_type.lower() == "shell":
             info["fiber_point"] = self.fiber_point
             lines.append(f"{info['fiber_point']} (Fiber)")
+        if self.gauss_point and "AtNodes" not in self.resp_type:
+            info["gauss_point"] = self.gauss_point
+            lines.append(f"{info['gauss_point']} (Gauss)")
         if self.unit_symbol:
             info["unit"] = self.unit_symbol
             lines.append(f"{info['unit']} (unit)")
@@ -60,14 +63,15 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         return text + "\n"
 
     def _get_mesh_data(self, step, ele_tags, defo_scale):
-        pos_defo = np.array(self._get_defo_coord_da(step, defo_scale))
-        tags, pos, cells, cell_types = self._make_unstru_info(ele_tags, step)
-        scalars = self.resp_step[step].to_numpy()
+        plot_step = self._get_plot_step(step)
+        pos_defo = np.array(self._get_defo_coord_da(plot_step, defo_scale))
+        _, _, cells, cell_types = self._make_unstru_info(ele_tags, plot_step)
+        scalars = self._get_resp_at_step(step).to_numpy()
         return pos_defo, cells, cell_types, scalars
 
     def get_dataset(self, step, ele_tags=None, defo_scale=1.0):
         """Get the dataset for the specified step and element tags."""
-        step, clim = self._get_resp_peak(idx=step)
+        step, _ = self._get_resp_peak(idx=step)
         pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale=defo_scale)
         grid = pv.UnstructuredGrid(cells, cell_types, pos)
         grid[self.resp_type] = scalars
@@ -89,14 +93,15 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         show_mp_constraint: bool = False,
         show_max_min: bool = False,
     ):
-        step = round(value)
-        node_no_deform_coords = np.array(self._get_node_da(step))
+        step = value if self._is_time_envelope_step(value) else round(value)
+        plot_step = self._get_plot_step(step)
+        node_no_deform_coords = np.array(self._get_node_da(plot_step))
         pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale)
         #  ---------------------------------
         # plotter.clear_actors()  # !!!!!!
         self.clear_plotter(plotter)
         if plot_all_mesh:
-            self._plot_all_mesh(plotter, color="gray", step=step)
+            self._plot_all_mesh(plotter, color="gray", step=plot_step)
         resp_plot = _plot_unstru_cmap(
             plotter,
             pos=pos,
@@ -114,7 +119,8 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             pos_origin=node_no_deform_coords,
         )
 
-        title = self._make_title(scalars, step, self.time[step])
+        title_time = None if self._is_time_envelope_step(step) else self.time[step]
+        title = self._make_title(scalars, step, title_time)
         scalar_bar = plotter.add_scalar_bar(title=title, **self.pargs.scalar_bar_kargs)
         if scalar_bar:
             # scalar_bar.SetTitle(title)
@@ -155,9 +161,9 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
             self._plot_outline(plotter)
         bc_grid, mp_grid = None, None
         if show_bc:
-            bc_grid = self._plot_bc(plotter, step, defo_scale=defo_scale, bc_scale=bc_scale)
+            bc_grid = self._plot_bc(plotter, plot_step, defo_scale=defo_scale, bc_scale=bc_scale)
         if show_mp_constraint:
-            mp_grid = self._plot_mp_constraint(plotter, step, defo_scale=defo_scale)
+            mp_grid = self._plot_mp_constraint(plotter, plot_step, defo_scale=defo_scale)
 
         self._update_plotter(plotter, cpos)
         return resp_plot, scalar_bar, bc_grid, mp_grid, max_min_label_grid
@@ -176,7 +182,7 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         plotter=None,
     ):
         step = round(step)
-        pos, cells, cell_types, scalars = self._get_mesh_data(step, ele_tags, defo_scale)
+        pos, cells, _, scalars = self._get_mesh_data(step, ele_tags, defo_scale)
 
         if resp_plot:
             resp_plot.points = pos
@@ -194,13 +200,23 @@ class PlotUnstruResponse(PlotUnstruResponseBase, PlotResponsePyvistaBase):
         if max_min_label_grid:
             idxs = [np.argmax(scalars), np.argmin(scalars)]
             labels = [f"Max: {scalars[idxs[0]]: .3e}", f"Min: {scalars[idxs[1]]: .3e}"]
+            if len(scalars) == len(pos):
+                ps = pos[idxs]
+            elif len(scalars) == len(cells):
+                cell_max = cells[idxs[0], 1:]
+                cell_min = cells[idxs[1], 1:]
+                ps_max = np.mean(pos[cell_max, :], axis=0)
+                ps_min = np.mean(pos[cell_min, :], axis=0)
+                ps = np.vstack([ps_max, ps_min])
+            else:
+                ps = pos[idxs]
             text_property = pv.TextProperty(
                 bold=True,
                 font_size=self.pargs.font_size + 10,
             )
             _update_point_label_actor(
                 max_min_label_grid,
-                pos[idxs],
+                ps,
                 labels,
                 text_property=text_property,
                 renderer=plotter.renderer,
@@ -392,6 +408,7 @@ def plot_unstruct_responses(
     resp_type: str = "sectionForces",
     resp_dof: str = "MXX",
     shell_fiber_loc: Optional[Union[str, int]] = "top",
+    gauss_point: Optional[Union[str, int]] = "average",
     style: str = "surface",
     unit_symbol: Optional[str] = None,
     unit_factor: Optional[float] = None,
@@ -420,7 +437,10 @@ def plot_unstruct_responses(
         Otherwise, show the step with the following ``step`` parameter.
     step: Union[int, str], default: "absMax"
         If slides = False, this parameter will be used as the step to plot.
-        If str, Optional: [absMax, absMin, Max, Min].
+        If str, Optional: [absMax, absMin, Max, Min, absMaxEach, absMinEach, maxEach, minEach].
+        ``absMax``/``absMin``/``Max``/``Min`` select one global time step.
+        ``absMaxEach``/``absMinEach``/``maxEach``/``minEach`` show the per-node or per-element
+        time envelope across all steps.
         If int, this step will be demonstrated (counting from 0).
     ele_type: str, default: "Shell"
         Element type, optional, one of ["Shell", "Plane", "Solid"].
@@ -429,15 +449,15 @@ def plot_unstruct_responses(
 
         #. For ``Shell`` elements, one of ["sectionForces", "sectionDeformations", "sectionForcesAtNodes", "sectionDeformationsAtNodes", "Stresses", "Strains", "StressesAtNodes", "StrainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element (per unit length).
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "sectionForces".
         #. For ``Plane`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
         #. For ``Brick`` or ``Solid`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
 
     resp_dof: str, default: None
@@ -485,10 +505,15 @@ def plot_unstruct_responses(
 
     shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
         The location of the fiber point for shell elements.
-        If str, one of ["top", "bottom", "middle"].
+        If str, one of ["top", "bottom", "middle", "average", "max", "min", "absMax", "absMin"].
         If int, the index of the fiber point to be visualized, from 1 (bottom) to N (top).
         The fiber point is the fiber layer in the shell section.
         Note that this parameter is only valid for stresses and strains in shell elements.
+    gauss_point: Optional[Union[str, int]], default: "average"
+        How to reduce responses at Gaussian integration points to each element.
+        If str, one of ["average", "max", "min", "absMax", "absMin"].
+        If int, the tag of the Gaussian integration point to be visualized.
+        This parameter is ignored for responses ending with ``AtNodes``.
 
     unit_symbol: str, default: None
         Unit symbol to be displayed in the plot.
@@ -551,7 +576,12 @@ def plot_unstruct_responses(
     plotbase = PlotUnstruResponse(odb_tag, lazy_load=lazy_load)
     plotbase.set_unit(symbol=unit_symbol, factor=unit_factor)
     plotbase.refactor_resp_step(
-        ele_tags=ele_tags, ele_type=ele_type, resp_type=resp_type, component=resp_dof, fiber_point=shell_fiber_loc
+        ele_tags=ele_tags,
+        ele_type=ele_type,
+        resp_type=resp_type,
+        component=resp_dof,
+        fiber_point=shell_fiber_loc,
+        gauss_point=gauss_point,
     )
     if slides:
         plotbase.plot_slide(
@@ -597,6 +627,7 @@ def plot_unstruct_responses_animation(
     resp_type: Optional[str] = None,
     resp_dof: Optional[str] = None,
     shell_fiber_loc: Optional[Union[str, int]] = "top",
+    gauss_point: Optional[Union[str, int]] = "average",
     savefig: Optional[str] = None,
     off_screen: bool = True,
     style: str = "surface",
@@ -635,15 +666,15 @@ def plot_unstruct_responses_animation(
 
         #. For ``Shell`` elements, one of ["sectionForces", "sectionDeformations", "sectionForcesAtNodes", "sectionDeformationsAtNodes", "Stresses", "Strains", "StressesAtNodes", "StrainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element (per unit length).
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "sectionForces".
         #. For ``Plane`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
         #. For ``Brick`` or ``Solid`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
 
     resp_dof: str, default: None
@@ -691,10 +722,15 @@ def plot_unstruct_responses_animation(
 
     shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
         The location of the fiber point for shell elements.
-        If str, one of ["top", "bottom", "middle"].
+        If str, one of ["top", "bottom", "middle", "average", "max", "min", "absMax", "absMin"].
         If int, the index of the fiber point to be visualized, from 1 (bottom) to N (top).
         The fiber point is the fiber layer in the shell section.
         Note that this parameter is only valid for stresses and strains in shell elements.
+    gauss_point: Optional[Union[str, int]], default: "average"
+        How to reduce responses at Gaussian integration points to each element.
+        If str, one of ["average", "max", "min", "absMax", "absMin"].
+        If int, the tag of the Gaussian integration point to be visualized.
+        This parameter is ignored for responses ending with ``AtNodes``.
 
     unit_symbol: str, default: None
         Unit symbol to be displayed in the plot.
@@ -759,7 +795,12 @@ def plot_unstruct_responses_animation(
     plotbase = PlotUnstruResponse(odb_tag, lazy_load=lazy_load)
     plotbase.set_unit(symbol=unit_symbol, factor=unit_factor)
     plotbase.refactor_resp_step(
-        ele_tags=ele_tags, ele_type=ele_type, resp_type=resp_type, component=resp_dof, fiber_point=shell_fiber_loc
+        ele_tags=ele_tags,
+        ele_type=ele_type,
+        resp_type=resp_type,
+        component=resp_dof,
+        fiber_point=shell_fiber_loc,
+        gauss_point=gauss_point,
     )
     plotbase.plot_anim(
         plotter,
@@ -791,6 +832,7 @@ def get_unstruct_responses_dataset(
     resp_type: str = "sectionForces",
     resp_dof: str = "MXX",
     shell_fiber_loc: Optional[Union[str, int]] = "top",
+    gauss_point: Optional[Union[str, int]] = "average",
     defo_scale: Union[float, int, bool] = 0.0,
     lazy_load: bool = False,
 ) -> pv.UnstructuredGrid:
@@ -814,7 +856,10 @@ def get_unstruct_responses_dataset(
         If None, all elements are selected.
     step: Union[int, str], default: "absMax"
         If slides = False, this parameter will be used as the step to plot.
-        If str, Optional: [absMax, absMin, Max, Min].
+        If str, Optional: [absMax, absMin, Max, Min, absMaxEach, absMinEach, maxEach, minEach].
+        ``absMax``/``absMin``/``Max``/``Min`` select one global time step.
+        ``absMaxEach``/``absMinEach``/``maxEach``/``minEach`` show the per-node or per-element
+        time envelope across all steps.
         If int, this step will be demonstrated (counting from 0).
     ele_type: str, default: "Shell"
         Element type, optional, one of ["Shell", "Plane", "Solid"].
@@ -823,15 +868,15 @@ def get_unstruct_responses_dataset(
 
         #. For ``Shell`` elements, one of ["sectionForces", "sectionDeformations", "sectionForcesAtNodes", "sectionDeformationsAtNodes", "Stresses", "Strains", "StressesAtNodes", "StrainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element (per unit length).
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "sectionForces".
         #. For ``Plane`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
         #. For ``Brick`` or ``Solid`` elements, one of ["stresses", "strains", "stressesAtNodes", "strainsAtNodes"].
             If it endswith `AtNodes`, responses at nodes will be displayed,
-            else responses at Gaussian integration points will be averaged for each element.
+            else responses at Gaussian integration points will be reduced for each element by ``gauss_point``.
             If None, defaults to "stresses".
 
     resp_dof: str, default: None
@@ -864,10 +909,15 @@ def get_unstruct_responses_dataset(
 
     shell_fiber_loc: Optional[Union[str, int]], default: "top", added in v1.0.16
         The location of the fiber point for shell elements.
-        If str, one of ["top", "bottom", "middle"].
+        If str, one of ["top", "bottom", "middle", "average", "max", "min", "absMax", "absMin"].
         If int, the index of the fiber point to be visualized, from 1 (bottom) to N (top).
         The fiber point is the fiber layer in the shell section.
         Note that this parameter is only valid for stresses and strains in shell elements.
+    gauss_point: Optional[Union[str, int]], default: "average"
+        How to reduce responses at Gaussian integration points to each element.
+        If str, one of ["average", "max", "min", "absMax", "absMin"].
+        If int, the tag of the Gaussian integration point to be visualized.
+        This parameter is ignored for responses ending with ``AtNodes``.
     defo_scale: float, default: 0.0
         Scales the size of the deformation presentation.
         If set to False or 0.0, the deformed shape will not be scaled (original deformation).
@@ -890,6 +940,11 @@ def get_unstruct_responses_dataset(
     """
     plotbase = PlotUnstruResponse(odb_tag, lazy_load=lazy_load)
     plotbase.refactor_resp_step(
-        ele_tags=ele_tags, ele_type=ele_type, resp_type=resp_type, component=resp_dof, fiber_point=shell_fiber_loc
+        ele_tags=ele_tags,
+        ele_type=ele_type,
+        resp_type=resp_type,
+        component=resp_dof,
+        fiber_point=shell_fiber_loc,
+        gauss_point=gauss_point,
     )
     return plotbase.get_dataset(step, ele_tags, defo_scale=defo_scale)

@@ -130,6 +130,8 @@ class PlotResponsePyvistaBase(PlotResponseBase):
                 unstru_cells,
                 unstru_cell_types,
                 color=color,
+                show_unstru_edges=self.pargs.show_mesh_edges,
+                edge_width=self.pargs.mesh_edge_width,
                 render_lines_as_tubes=False,
             )
 

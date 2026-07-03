@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -284,6 +284,8 @@ def set_plot_props(**kwargs: Unpack[_PLOT_ARGS_TYPES1]) -> None:
             Default ``1 / 20``.
         - show_mesh_edges: bool, default: True
             Whether to display the mesh edges of ``planes``, ``plates``, ``shells``, and ``solid`` elements.
+            This also controls the wireframe overlay of these elements when plotting the full model together
+            with responses.
         - mesh_edge_color: str, default: black
             Color of the mesh edges for ``planes``, ``plates``, ``shells``, and ``solid`` elements.
         - mesh_edge_width: float, default: 1.0
@@ -397,7 +399,7 @@ def set_plot_colors(**kwargs: Unpack[_PLOT_ARGS_TYPES2]) -> None:
         PLOT_ARGS.color_beam = kwargs["frame"]
 
 
-def _get_ele_color(ele_types: list[str]):
+def _get_ele_color(ele_types: list[str]):  # noqa: C901
     if PLOT_ARGS.cmap_model:
         cmap = plt.get_cmap(PLOT_ARGS.cmap_model)
         colors = cmap(np.linspace(0, 1, len(ele_types)))
@@ -450,7 +452,7 @@ def _plot_points_cmap(
     scalars,
     cmap: str = "jet",
     size: float = 3.0,
-    clim: Optional[list] = None,
+    clim: list | None = None,
     show_scalar_bar=False,
     render_points_as_spheres=True,
 ):
@@ -675,6 +677,7 @@ def _plot_all_mesh(
     unstru_cells,
     unstru_celltypes,
     color="gray",
+    show_unstru_edges=True,
     edge_width=1.0,
     render_lines_as_tubes=True,
 ):
@@ -685,15 +688,18 @@ def _plot_all_mesh(
         color=color,
         render_lines_as_tubes=render_lines_as_tubes,
     )
-    unstru_plot = _plot_unstru(
-        plotter,
-        pos,
-        unstru_cells,
-        unstru_celltypes,
-        color=color,
-        style="wireframe",
-        edge_width=edge_width,
-    )
+    if show_unstru_edges and edge_width > 0:
+        unstru_plot = _plot_unstru(
+            plotter,
+            pos,
+            unstru_cells,
+            unstru_celltypes,
+            color=color,
+            style="wireframe",
+            edge_width=edge_width,
+        )
+    else:
+        unstru_plot = None
     return line_plot, unstru_plot
 
 

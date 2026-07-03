@@ -86,6 +86,20 @@ fig = opsvis.plot_model(show_nodal_loads=True, show_ele_loads=True, show_outline
 fig
 
 # %%
+# Time envelope: each element uses its own signed value at the step where its absolute response is largest.
+fig = opsvis.plot_unstruct_responses(
+    odb_tag=1,
+    step="absMaxEach",
+    ele_type="Plane",
+    resp_type="stresses",
+    resp_dof="sigma_vm",
+    gauss_point="average",
+    show_defo=False,
+)
+# fig.show()
+fig
+
+# %%
 # Results visualization
 # ---------------------
 ops.constraints("Transformation")
@@ -127,8 +141,9 @@ fig = opsvis.plot_unstruct_responses(
     odb_tag=1,
     slides=True,
     ele_type="Plane",
-    resp_type="stresses",  # at Gauss points, it will be averaged over the element
+    resp_type="stresses",  # at Gauss points, reduced to each element by ``gauss_point``
     resp_dof="sigma_vm",
+    gauss_point="average",  # optional: "average", "max", "min", "absMax", "absMin", or a point tag
     show_model=False,
     show_defo=True,
     defo_scale="auto",
